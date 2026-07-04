@@ -3,7 +3,7 @@
 import asyncio
 
 from tipseq_plr.backends import DropletParams, OnyxBackend, RobotArmBackend, Site, VSpinBackend
-from tipseq_plr.hydrop_atac import HyDropATAC, HyDropConfig
+from tipseq_plr.protocols.hydrop_atac import HyDropATAC, HyDropConfig
 
 
 def _cfg(**kw):

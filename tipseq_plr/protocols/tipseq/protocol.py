@@ -23,11 +23,11 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
-from .config import Method, RunConfig
-from .deck import build_deck, pin_labware
-from .devices import build_devices
-from .reagents import ReagentRegistry
-from .steps import LiquidOps, binding, tagmentation, ivt, cdna, library, qc
+from ...config import Method, RunConfig
+from ...deck import build_deck, pin_labware
+from ...devices import build_devices
+from ...reagents import ReagentRegistry
+from ...steps import LiquidOps, binding, tagmentation, ivt, cdna, library, qc
 
 logger = logging.getLogger("tipseq.protocol")
 
@@ -53,7 +53,7 @@ class TipSeqProtocol:
         v = self.cfg.volumes
         wells = self.cfg.num_samples
         # Rough per-well accounting across the run for operator prep.
-        from . import config as C
+        from ... import config as C
         table = [
             (C.CONA_BEADS, v.cona_bead_slurry, 1),
             (C.ANTIBODY_BUFFER, v.antibody_reaction, 1),

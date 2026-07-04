@@ -2,10 +2,10 @@
 CLI for the HyDrop scATAC + Onyx workflow.
 
     # dry-run 8 HyDrop samples end to end (STAR -> arm -> Onyx -> arm -> STAR)
-    python -m tipseq_plr.hydrop_atac.run --samples 8 --simulate -v
+    python -m tipseq_plr.protocols.hydrop_atac.run --samples 8 --simulate -v
 
     # write the QC report
-    python -m tipseq_plr.hydrop_atac.run --report hydrop.json
+    python -m tipseq_plr.protocols.hydrop_atac.run --report hydrop.json
 """
 
 from __future__ import annotations

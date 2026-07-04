@@ -32,10 +32,10 @@ import math
 from dataclasses import dataclass
 from typing import List
 
-from ..backends import DropletParams, ProfileStep, Site
-from ..deck import build_deck
-from ..devices import build_devices, _sleep
-from ..steps.qc import _least_squares
+from ...backends import DropletParams, ProfileStep, Site
+from ...deck import build_deck
+from ...devices import build_devices, _sleep
+from ...steps.qc import _least_squares
 from .config import HyDropConfig
 
 logger = logging.getLogger("tipseq.hydrop")
@@ -306,7 +306,7 @@ class HyDropATAC:
 
 
 def _as_run_config(cfg: HyDropConfig):
-    from ..config import RunConfig, Method
+    from ...config import RunConfig, Method
     rc = RunConfig(method=Method.PLATE_TIPSEQ, num_samples=cfg.num_samples,
                    simulate=cfg.simulate, odtc_host=cfg.odtc_host, odtc_port=cfg.odtc_port,
                    tecan_host=cfg.tecan_host)

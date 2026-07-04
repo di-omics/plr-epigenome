@@ -25,11 +25,11 @@ import random
 from dataclasses import dataclass
 from typing import Dict, List
 
-from .. import config as C
-from ..deck import build_deck
-from ..devices import build_devices, _sleep
-from ..reagents import ReagentRegistry
-from ..steps.qc import _least_squares
+from ... import config as C
+from ...deck import build_deck
+from ...devices import build_devices, _sleep
+from ...reagents import ReagentRegistry
+from ...steps.qc import _least_squares
 from .config import NormConfig
 from .plan import build_plan, summarize, WellNorm
 
@@ -199,7 +199,7 @@ class PlateNormalization:
 def _as_run_config(cfg: NormConfig):
     """Adapt NormConfig to the subset of RunConfig fields build_devices reads,
     without pulling in the whole TIP-seq run config."""
-    from ..config import RunConfig, Method
+    from ...config import RunConfig, Method
     rc = RunConfig(method=Method.PLATE_TIPSEQ, num_samples=cfg.num_samples,
                    simulate=cfg.simulate, tecan_host=cfg.tecan_host, star_id=cfg.star_id)
     setattr(rc, "_sim_time_scale", getattr(cfg, "_sim_time_scale", 0.0))

@@ -23,7 +23,7 @@ from .config import (
     QCThresholds,
     PCRProfile,
 )
-from .protocol import TipSeqProtocol, FacsHandoffRequired
+from .protocols.tipseq import TipSeqProtocol, FacsHandoffRequired
 
 __all__ = [
     "Method",

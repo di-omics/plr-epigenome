@@ -2,13 +2,13 @@
 Command-line entry point.
 
     # dry-run the fully-autonomous plate TIP-seq for 96 samples
-    python -m tipseq_plr.run --method plate_tipseq --samples 96 --simulate
+    python -m tipseq_plr.protocols.tipseq.run --method plate_tipseq --samples 96 --simulate
 
     # sciTIP-seq dry-run (prints the FACS handoff, then continues)
-    python -m tipseq_plr.run --method scitip_seq --samples 96 --simulate
+    python -m tipseq_plr.protocols.tipseq.run --method scitip_seq --samples 96 --simulate
 
     # print the reagent loadout / labware checklist only
-    python -m tipseq_plr.run --plan-only
+    python -m tipseq_plr.protocols.tipseq.run --plan-only
 
 Use --sim-time-scale to actually feel the timing (0.0 = instant; 1e-4 compresses
 17 h of IVT into ~6 s). Real hardware: drop --simulate and set device addresses.
@@ -22,7 +22,7 @@ import json
 import logging
 import sys
 
-from .config import Method, RunConfig
+from ...config import Method, RunConfig
 from .protocol import TipSeqProtocol
 
 

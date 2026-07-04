@@ -39,7 +39,7 @@ for linear amplification. Everything else is standard STAR bead chemistry.
 ## Run it (simulation, no hardware)
 
 ```bash
-python -m tipseq_plr.hydrop_atac.run --samples 8 --simulate -v
+python -m tipseq_plr.protocols.hydrop_atac.run --samples 8 --simulate -v
 ```
 
 You will see the handoffs in the log: `arm: pick onyx_chip from star_transfer ->
@@ -48,7 +48,7 @@ place at onyx_load`, then `Onyx: generate droplets -> collected 100 uL`, then
 simulation.
 
 ```python
-from tipseq_plr.hydrop_atac import HyDropConfig, HyDropATAC
+from tipseq_plr.protocols.hydrop_atac import HyDropConfig, HyDropATAC
 import asyncio
 report = asyncio.run(HyDropATAC(HyDropConfig(num_samples=8, simulate=True)).run())
 ```

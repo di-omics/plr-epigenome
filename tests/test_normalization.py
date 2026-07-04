@@ -2,8 +2,8 @@
 
 import asyncio
 
-from tipseq_plr.normalization import NormConfig, PlateNormalization, build_plan, plan_well
-from tipseq_plr.normalization.plan import summarize
+from tipseq_plr.protocols.normalization import NormConfig, PlateNormalization, build_plan, plan_well
+from tipseq_plr.protocols.normalization.plan import summarize
 
 
 def _cfg(**kw):

@@ -1,7 +1,7 @@
 """
 Plate normalization: Qubit HS quant -> Tecan read -> normalize a 96-well plate.
 
-    from tipseq_plr.normalization import NormConfig, PlateNormalization
+    from tipseq_plr.protocols.normalization import NormConfig, PlateNormalization
     import asyncio
     cfg = NormConfig(num_samples=96, source_volume_ul=12.0,
                      target_ng_per_ul=1.0, final_volume_ul=20.0, simulate=True)

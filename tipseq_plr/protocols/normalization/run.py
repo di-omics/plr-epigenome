@@ -2,10 +2,10 @@
 CLI for the plate-normalization protocol.
 
     # normalize 96 wells to 1 ng/uL in 20 uL, from a 12 uL source plate (dry run)
-    python -m tipseq_plr.normalization.run --samples 96 --target 1.0 --final 20 --simulate -v
+    python -m tipseq_plr.protocols.normalization.run --samples 96 --target 1.0 --final 20 --simulate -v
 
     # just the concentrations + transfer plan as JSON
-    python -m tipseq_plr.normalization.run --report norm.json
+    python -m tipseq_plr.protocols.normalization.run --report norm.json
 """
 
 from __future__ import annotations

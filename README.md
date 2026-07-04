@@ -20,22 +20,34 @@ Instruments driven:
 | Bead separation | passive magnet nest (Alpaqua/Ambion) | plate move + settle |
 | Library QC | **Tecan Infinite 200 Pro** | `backends/tecan_pro200.py` |
 
+## Protocols
+
+Every runnable method lives under **[`tipseq_plr/protocols/`](tipseq_plr/protocols)**, one self-contained package per protocol. They all compose the same shared infrastructure at the package root (`config`, `deck`, `devices`, `reagents`, `backends`, `steps`), so a protocol package only holds what is specific to that method: its parameters, its orchestration, and its CLI.
+
+| Protocol | Directory | What it does | CLI |
+|---|---|---|---|
+| **(sci)TIP-seq** | [`protocols/tipseq/`](tipseq_plr/protocols/tipseq) | single-cell epigenomic library prep (Bartlett 2021); plate / bulk / sci variants, with an optional FACSMelody sort to close the sci path | `python -m tipseq_plr.protocols.tipseq.run` |
+| **Plate normalization** | [`protocols/normalization/`](tipseq_plr/protocols/normalization) | Qubit HS quant on the Tecan, then normalize a 96-well plate to a uniform concentration | `python -m tipseq_plr.protocols.normalization.run` |
+| **HyDrop scATAC** | [`protocols/hydrop_atac/`](tipseq_plr/protocols/hydrop_atac) | droplet-based scATAC (De Rop 2024); STAR wet chemistry bridged to an Onyx droplet generator by a robot arm | `python -m tipseq_plr.protocols.hydrop_atac.run` |
+
+Each protocol package has the same shape: `config.py` (paper-traceable parameters), `protocol.py` (the orchestrator), `run.py` (a CLI), and any protocol-specific helpers (for example `normalization/plan.py`). A new protocol is a new folder here; it does not touch the shared root. Cross-cutting tooling that is not itself a protocol (the FACSMelody reverse-engineering harness) stays at the root under `reverse_engineering/`.
+
 ## Run it now (no hardware)
 
 Everything runs in **simulation** with zero hardware and zero external drivers, PyLabRobot doesn't even need to be installed (it falls back to a logging "dry" mode). With PyLabRobot installed, simulation routes through its chatterbox backend so you see every atomic aspirate/dispense.
 
 ```bash
 # dry-run the fully-autonomous plate TIP-seq for 96 samples
-python -m tipseq_plr.run --method plate_tipseq --samples 96 --simulate -v
+python -m tipseq_plr.protocols.tipseq.run --method plate_tipseq --samples 96 --simulate -v
 
 # sciTIP-seq: prints the FACS handoff boundary, then continues
-python -m tipseq_plr.run --method scitip_seq --samples 96 --simulate
+python -m tipseq_plr.protocols.tipseq.run --method scitip_seq --samples 96 --simulate
 
 # just the reagent prep sheet + labware checklist
-python -m tipseq_plr.run --plan-only
+python -m tipseq_plr.protocols.tipseq.run --plan-only
 
 # feel the wall-clock (17 h IVT compressed): 1e-5 of real time
-python -m tipseq_plr.run --method plate_tipseq --sim-time-scale 0.00001
+python -m tipseq_plr.protocols.tipseq.run --method plate_tipseq --sim-time-scale 0.00001
 ```
 
 Output ends with a QC verdict per well (`pass` / `dilute` / `fail`) from the simulated Tecan read. `--report out.json` writes the full report.
@@ -46,7 +58,7 @@ The protocol is six deck-resident stages (`tipseq_plr/steps/`):
 
 | Stage | Module | Paper section |
 |---|---|---|
-| 0 preload |, | cells harvested/permeabilized, aliquoted per well (off-deck) |
+| 0 preload | (none) | cells harvested/permeabilized, aliquoted per well (off-deck) |
 | 1 targeting | `binding.py` | conA capture -> primary Ab -> secondary Ab -> pA-Tn5 (T7 transposon) |
 | 2 tagmentation | `tagmentation.py` | 37 °C tagment -> EDTA stop -> SDS/proteinase K -> SPRI |
 | 3 linear amp | `ivt.py` | gap-fill (72 °C) -> T7 IVT (37 °C, ~17 h) -> RNA SPRI |
@@ -88,14 +100,14 @@ Flow: **12 uL source plate -> high-sensitivity Qubit dsDNA prep (2 uL aliquot in
 
 ```bash
 # normalize 96 wells to 1 ng/uL in 20 uL, from a 12 uL source plate
-python -m tipseq_plr.normalization.run --samples 96 --target 1.0 --final 20 --simulate -v
-python -m tipseq_plr.normalization.run --report norm.json     # full per-well plan as JSON
+python -m tipseq_plr.protocols.normalization.run --samples 96 --target 1.0 --final 20 --simulate -v
+python -m tipseq_plr.protocols.normalization.run --report norm.json     # full per-well plan as JSON
 ```
 
-The normalization math ([`normalization/plan.py`](tipseq_plr/normalization/plan.py)) is a pure, unit-tested function. Each well is classified: `ok` (hits target exactly), `capped_low` (too dilute to reach target in the final volume, transfers max available and flags it), `needs_predilution` (so concentrated the ideal transfer is below the smallest reliable volume), or `empty`. Volume is always conserved (`sample + water == final`). Nothing is silently mis-normalized: out-of-range wells are reported, not hidden.
+The normalization math ([`protocols/normalization/plan.py`](tipseq_plr/protocols/normalization/plan.py)) is a pure, unit-tested function. Each well is classified: `ok` (hits target exactly), `capped_low` (too dilute to reach target in the final volume, transfers max available and flags it), `needs_predilution` (so concentrated the ideal transfer is below the smallest reliable volume), or `empty`. Volume is always conserved (`sample + water == final`). Nothing is silently mis-normalized: out-of-range wells are reported, not hidden.
 
 ```python
-from tipseq_plr.normalization import NormConfig, PlateNormalization
+from tipseq_plr.protocols.normalization import NormConfig, PlateNormalization
 import asyncio
 cfg = NormConfig(num_samples=96, source_volume_ul=12.0,
                  target_ng_per_ul=1.0, final_volume_ul=20.0, simulate=True)
@@ -109,7 +121,7 @@ Automates HyDrop single-cell ATAC library prep by pairing the STAR (wet chemistr
 Protocol basis: the HyDrop ATAC methods in [De Rop et al., Nat Biotechnol 42:916-926 (2024)](https://doi.org/10.1038/s41587-023-01881-x). The STAR does nuclei prep, tagmentation, and co-encapsulation assembly; the arm carries the loaded chip to the Onyx; the Onyx generates the emulsion; the arm carries it to the ODTC for linear amplification; the STAR finishes with emulsion break, Dynabead/Ampure cleanup, index PCR, size selection, and Tecan QC.
 
 ```bash
-python -m tipseq_plr.hydrop_atac.run --samples 8 --simulate -v
+python -m tipseq_plr.protocols.hydrop_atac.run --samples 8 --simulate -v
 ```
 
 The log shows the handoffs: `arm: pick onyx_chip from star_transfer -> place at onyx_load`, `Onyx: generate droplets -> collected 100 uL`, `arm: ... emulsion_plate onyx_output -> odtc_nest`. Two new backends make it work: [`RobotArmBackend`](tipseq_plr/backends/robot_arm.py) (generic arm over taught transfer sites, live motion gated behind `enabled=True` and a speed cap) and [`OnyxBackend`](tipseq_plr/backends/droplet_genomics_onyx.py) (pressure-driven droplet generation, actuation gated behind `armed=True`). Full playbook: [docs/hydrop-onyx-bridge.md](docs/hydrop-onyx-bridge.md).
@@ -132,10 +144,15 @@ Nothing about the biochemistry sequencing changes between sim and hardware, only
 
 ```
 tipseq_plr/
-  config.py          all parameters (volumes/temps/times), paper-traceable, no PLR import
+  # --- shared infrastructure (every protocol composes these) ---
+  config.py          TIP-seq parameters (volumes/temps/times), paper-traceable, no PLR import
   deck.py            STAR deck layout; labware pinning; version-tolerant fallbacks
   reagents.py        reagent -> reservoir map; prep-sheet planner; dead-volume guard
   devices.py         uniform async wrappers over STAR / HHS / ODTC / reader / magnet / arm / onyx / vspin
+  steps/             TIP-seq stage library + shared helpers (LiquidOps, qc math)
+    common.py        LiquidOps: column-wise pipetting, SPRI cleanup, magnet washes
+    thermal.py       heater-shaker holds + ODTC ramp programs
+    binding.py ... qc.py   the six TIP-seq stages
   backends/
     inheco_odtc.py   SiLA-ready ODTC thermocycler backend (+ simulation)
     tecan_pro200.py  Tecan Infinite 200 Pro reader backend (+ simulation)
@@ -143,36 +160,30 @@ tipseq_plr/
     robot_arm.py     generic PLR-driven inter-instrument arm (taught sites, gated)
     droplet_genomics_onyx.py  Onyx droplet-generation backend (+ simulation)
     vspin.py         VSpin centrifuge backend; deck-integrated, balance-guarded
-  reverse_engineering/   FACSMelody RE toolkit (Rick Wierenga methodology)
-    model.py         Command / ProtocolMap / CaptureFrame data model
-    transport_discovery.py  find the USB/serial/TCP link
-    chorus_probe.py  mine the FACSChorus workstation (logs / DB / ports)
-    capture.py       ingest pcap / usbmon / hexdump / Chorus-log captures
-    correlate.py     action<->packet correlation; unique-frame extraction
-    decode.py        framing / opcode / checksum decode -> ProtocolMap
-    replay.py        guarded PyUSB/serial/TCP replay client
-    cli.py           discover | chorus | seed | mark | decode | coverage | replay
-  steps/
-    common.py        LiquidOps: column-wise pipetting, SPRI cleanup, magnet washes
-    thermal.py       heater-shaker holds + ODTC ramp programs
-    binding.py ... qc.py   the six stages
-  normalization/     standalone Qubit HS quant + 96-well normalization protocol
-    config.py        NormConfig / QubitHS assay parameters
-    plan.py          pure normalization math (per-well sample/water plan)
-    protocol.py      PlateNormalization: assay prep -> read -> quantify -> transfer
-    run.py           CLI
-  hydrop_atac/       HyDrop scATAC prep with an Onyx droplet-gen step (arm-bridged)
-    config.py        HyDrop buffers / volumes / thermal programs (paper-traceable)
-    protocol.py      HyDropATAC: STAR -> arm -> Onyx -> arm -> STAR orchestration
-    run.py           CLI
-  protocol.py        TipSeqProtocol orchestrator (incl. FACS handoff / sorter)
-  run.py             CLI
+  reverse_engineering/   FACSMelody RE toolkit (Rick Wierenga methodology; not a protocol)
+    model.py / transport_discovery.py / chorus_probe.py / capture.py
+    correlate.py / decode.py / replay.py / cli.py
+
+  # --- protocols: one self-contained package per runnable method ---
+  protocols/
+    tipseq/          (sci)TIP-seq orchestrator + CLI (incl. FACS handoff / sorter)
+      protocol.py    TipSeqProtocol
+      run.py         CLI
+    normalization/   Qubit HS quant + 96-well normalization
+      config.py      NormConfig / QubitHS assay parameters
+      plan.py        pure normalization math (per-well sample/water plan)
+      protocol.py    PlateNormalization
+      run.py         CLI
+    hydrop_atac/     HyDrop scATAC with an Onyx droplet-gen step (arm-bridged)
+      config.py      HyDrop buffers / volumes / thermal programs (paper-traceable)
+      protocol.py    HyDropATAC: STAR -> arm -> Onyx -> arm -> STAR
+      run.py         CLI
 docs/facs-melody-re.md      FACSMelody reverse-engineering playbook
 docs/hydrop-onyx-bridge.md  HyDrop + Onyx + robot-arm playbook
 tests/               dry-mode smoke + logic tests (all protocols + toolkits)
 ```
 
-Design rules: step code never imports a vendor backend or branches on sim/real, it only calls `devices.py` wrappers and `LiquidOps`. Swapping an instrument is a one-line change in `build_devices`.
+Design rules: protocol code never imports a vendor backend or branches on sim/real, it only calls `devices.py` wrappers and the shared `steps`. Swapping an instrument is a one-line change in `build_devices`; adding a protocol is a new folder under `protocols/` that leaves the shared root untouched.
 
 ## Status
 
