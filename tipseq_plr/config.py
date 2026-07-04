@@ -246,6 +246,16 @@ class RunConfig:
     hhs_com: str = "USB0"                  # Hamilton Heater Shaker node
     tecan_host: str = "192.168.1.60"       # Tecan Infinite 200 Pro / Spark
 
+    # sciTIP-seq FACS sort (BD FACSMelody). When `sorter_enabled` is False the
+    # sci run pauses at the FACS boundary (manual handoff, `resume_after_facs`).
+    # When True, the sort is driven via the reverse-engineered ProtocolMap.
+    sorter_enabled: bool = False
+    sorter_protocol_path: str = ""         # decoded ProtocolMap from reverse_engineering/
+    sorter_template: str = "sciTIP_singlet_deposit"
+    sort_cells_per_well: int = 50          # 25-100 per paper; count-controlled deposition
+    sorter_armed: bool = False             # must be True to open the live link
+    sorter_allow_actuation: bool = False   # must be True to run fluidics/sort
+
     volumes: Volumes = field(default_factory=Volumes)
     timings: Timings = field(default_factory=Timings)
     temps: Temperatures = field(default_factory=Temperatures)

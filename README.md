@@ -61,9 +61,24 @@ Every volume, temperature, and incubation time lives in `config.py`, each tracea
 `sciTIP-seq` combinatorial indexing requires a **FACS re-distribution of pooled cells between index 1 and index 2** - that's why the published sci method omits conA beads. **A STAR cannot sort cells.** So:
 
 - **`plate_tipseq` / `bulk_tipseq`** keep cells on conA beads the whole way -> every separation is a magnet step -> **fully autonomous, one shot.** This is the recommended production path for up to 96 barcoded samples/targets in parallel.
-- **`scitip_seq`** runs index-1 tagmentation on deck, then **stops at the FACS boundary**. On hardware it raises `FacsHandoffRequired`; an operator sorts the pool into the index-2 plate and calls `proto.resume_after_facs()`. In simulation it prints the boundary and continues so you can validate the whole flow.
+- **`scitip_seq`** runs index-1 tagmentation on deck, then hits the FACS boundary. Three ways it resolves:
+  - **Manual (default):** on hardware it raises `FacsHandoffRequired`; an operator sorts the pool into the index-2 plate and calls `proto.resume_after_facs()`.
+  - **Automated (`sorter_enabled=True`):** the boundary drives a **BD FACSMelody** sort-to-plate via a reverse-engineered `ProtocolMap` - closed-loop, no human.
+  - **Simulation:** prints the boundary and continues so you can validate the whole flow.
 
 This is a property of the assay, not the code. If you want a single-tube high-plex path with no sort, that's a protocol redesign (e.g. droplet or split-pool without live-cell sorting) - flagged, not hidden.
+
+### Closing the FACS gap - the reverse-engineering toolkit
+
+`tipseq_plr/reverse_engineering/` is a staged harness that applies **Rick Wierenga's PyLabRobot methodology** (work to the OEM command layer -> sniff OEM↔device traffic -> correlate each UI action to its bytes -> decode framing -> replay via PyUSB/serial) to the BD FACSMelody + FACSChorus. Its output is a `ProtocolMap` the `BDFACSMelodyBackend` loads. Replay is guarded by two independent safety switches (`--armed`, `--live`) plus an `--allow-actuation` gate for anything that moves fluid or fires a sort, and the backend **refuses to run a live sort until every required command is decoded.** Full playbook: [docs/facs-melody-re.md](docs/facs-melody-re.md).
+
+```bash
+python -m tipseq_plr.reverse_engineering.cli discover --tcp-host <ip>   # find the link
+python -m tipseq_plr.reverse_engineering.cli chorus                     # mine Chorus logs/DB
+python -m tipseq_plr.reverse_engineering.cli mark --out marks.json      # label actions while sniffing
+python -m tipseq_plr.reverse_engineering.cli decode --capture cap.pcapng --marks marks.json --out protocol.json
+python -m tipseq_plr.reverse_engineering.cli coverage --protocol protocol.json
+```
 
 ## Going live
 
@@ -90,23 +105,35 @@ tipseq_plr/
   backends/
     inheco_odtc.py   SiLA-ready ODTC thermocycler backend (+ simulation)
     tecan_pro200.py  Tecan Infinite 200 Pro reader backend (+ simulation)
+    bd_facsmelody.py BD FACSMelody sorter backend; loads a decoded ProtocolMap
+  reverse_engineering/   FACSMelody RE toolkit (Rick Wierenga methodology)
+    model.py         Command / ProtocolMap / CaptureFrame data model
+    transport_discovery.py  find the USB/serial/TCP link
+    chorus_probe.py  mine the FACSChorus workstation (logs / DB / ports)
+    capture.py       ingest pcap / usbmon / hexdump / Chorus-log captures
+    correlate.py     action<->packet correlation; unique-frame extraction
+    decode.py        framing / opcode / checksum decode -> ProtocolMap
+    replay.py        guarded PyUSB/serial/TCP replay client
+    cli.py           discover | chorus | seed | mark | decode | coverage | replay
   steps/
     common.py        LiquidOps: column-wise pipetting, SPRI cleanup, magnet washes
     thermal.py       heater-shaker holds + ODTC ramp programs
     binding.py ... qc.py   the six stages
-  protocol.py        TipSeqProtocol orchestrator (incl. FACS handoff)
+  protocol.py        TipSeqProtocol orchestrator (incl. FACS handoff / sorter)
   run.py             CLI
-tests/               dry-mode smoke + logic tests
+docs/facs-melody-re.md  reverse-engineering playbook
+tests/               dry-mode smoke + logic tests (protocol + RE toolkit)
 ```
 
 Design rules: step code never imports a vendor backend or branches on sim/real - it only calls `devices.py` wrappers and `LiquidOps`. Swapping an instrument is a one-line change in `build_devices`.
 
 ## Status
 
-- ✅ End-to-end simulation of all three methods, 8-96 samples.
+- ✅ End-to-end simulation of all three methods, 8-96 samples (incl. sci with a simulated FACSMelody sort).
 - ✅ Reagent prep sheet + labware checklist generation.
 - ✅ dsDNA QC with standard-curve fit and pass/dilute/fail gating.
-- 🔌 ODTC and Tecan backends are interface-complete shims; wire transports before a live run.
+- ✅ FACSMelody RE toolkit: transport discovery, capture ingest, action->byte correlation, framing/checksum decode, guarded replay - all runnable offline.
+- 🔌 ODTC, Tecan, and FACSMelody backends are interface-complete shims; the Melody `ProtocolMap` is produced by running the RE playbook against your instrument.
 - 🧪 Not yet wet-lab validated. Treat as a method to dry-run, review, and adapt - not a validated SOP.
 
 ## License

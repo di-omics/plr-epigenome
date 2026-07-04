@@ -123,15 +123,35 @@ class TipSeqProtocol:
             await self.devices.stop()
 
     async def _facs_handoff(self):
+        """The sciTIP-seq index-1/index-2 boundary.
+
+        Three outcomes, in priority order:
+          1. A BD FACSMelody is configured (`sorter_enabled`) -> drive the sort
+             automatically via the reverse-engineered ProtocolMap. This is the
+             closed-loop path (STAR pools -> Melody sorts into index-2 plate).
+          2. Simulation, no sorter -> log the boundary and continue.
+          3. Hardware, no sorter -> raise so an operator sorts manually and calls
+             resume_after_facs().
+        """
         msg = (
             "sciTIP-seq FACS boundary: index-1 tagmented cells are pooled and must "
-            "be FACS-redistributed into the index-2 plate (25-100 cells/well) before "
-            "resuming. A STAR cannot perform this step."
+            "be FACS-redistributed into the index-2 plate (25-100 cells/well)."
         )
-        if self.cfg.simulate:
-            logger.warning("[sim] %s  -- continuing as if resumed.", msg)
+        if self.devices.sorter is not None:
+            logger.info("FACS boundary: driving BD FACSMelody sort-to-plate.")
+            # STAR pools index-1 wells + stages the index-2 plate off-deck to the
+            # sorter (arm/hotel handoff); here we trigger the templated sort.
+            await self.devices.sorter.sort_to_plate(
+                cells_per_well=self.cfg.sort_cells_per_well,
+                wells=self.cfg.num_samples,
+                template=self.cfg.sorter_template,
+            )
             return
-        raise FacsHandoffRequired(msg)
+        if self.cfg.simulate:
+            logger.warning("[sim] %s  -- no sorter configured; continuing as if resumed.", msg)
+            return
+        raise FacsHandoffRequired(
+            msg + " No FACSMelody configured; sort manually and call resume_after_facs().")
 
     async def resume_after_facs(self) -> dict:
         """Entry point to resume a real sci run once cells are sorted into the
