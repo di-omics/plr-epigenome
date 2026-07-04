@@ -20,7 +20,13 @@ import logging
 from dataclasses import dataclass
 from typing import Optional
 
-from .backends import BDFACSMelodyBackend, InhecoODTCBackend, TecanPro200Backend
+from .backends import (
+    BDFACSMelodyBackend,
+    InhecoODTCBackend,
+    OnyxBackend,
+    RobotArmBackend,
+    TecanPro200Backend,
+)
 from .config import RunConfig
 
 logger = logging.getLogger("tipseq.devices")
@@ -113,6 +119,8 @@ class Devices:
     magnet: MagnetController
     cfg: RunConfig
     sorter: Optional[BDFACSMelodyBackend] = None   # BD FACSMelody, sci path only
+    arm: Optional[RobotArmBackend] = None          # inter-instrument bridge
+    onyx: Optional[OnyxBackend] = None             # Onyx droplet generator (HyDrop)
 
     async def setup(self):
         if self.lh is not None:
@@ -120,10 +128,12 @@ class Devices:
         await self.hs.setup()
         await self.tc.setup()
         await self.reader.setup()
-        if self.sorter is not None:
-            await self.sorter.setup()
-        logger.info("all devices ready (simulate=%s, sorter=%s)",
-                    self.cfg.simulate, self.sorter is not None)
+        for opt in (self.sorter, self.arm, self.onyx):
+            if opt is not None:
+                await opt.setup()
+        logger.info("all devices ready (simulate=%s, sorter=%s, arm=%s, onyx=%s)",
+                    self.cfg.simulate, self.sorter is not None,
+                    self.arm is not None, self.onyx is not None)
 
     async def stop(self):
         for closer in (
@@ -131,6 +141,8 @@ class Devices:
             lambda: self.tc.stop(),
             lambda: self.reader.stop(),
             lambda: self.sorter.stop() if self.sorter is not None else _noop(),
+            lambda: self.arm.stop() if self.arm is not None else _noop(),
+            lambda: self.onyx.stop() if self.onyx is not None else _noop(),
             lambda: self.lh.stop() if self.lh is not None else _noop(),
         ):
             try:
@@ -173,6 +185,7 @@ def build_devices(cfg: RunConfig, deckmap) -> Devices:
     )
     reader = TecanPro200Backend(host=cfg.tecan_host, simulate=cfg.simulate)
     magnet = MagnetController(cfg, deckmap)
+    scale = getattr(cfg, "_sim_time_scale", 0.0)
     sorter = None
     if cfg.sorter_enabled:
         sorter = BDFACSMelodyBackend(
@@ -181,9 +194,30 @@ def build_devices(cfg: RunConfig, deckmap) -> Devices:
             armed=cfg.sorter_armed,
             allow_actuation=cfg.sorter_allow_actuation,
             sort_template=cfg.sorter_template,
-            sim_time_scale=getattr(cfg, "_sim_time_scale", 0.0),
+            sim_time_scale=scale,
         )
-    return Devices(lh=lh, hs=hs, tc=tc, reader=reader, magnet=magnet, cfg=cfg, sorter=sorter)
+    # Optional inter-instrument bridge + Onyx droplet generator (HyDrop path).
+    arm = None
+    if getattr(cfg, "arm_enabled", False):
+        arm = RobotArmBackend(
+            kind=getattr(cfg, "arm_kind", "generic"),
+            host=getattr(cfg, "arm_host", "127.0.0.1"),
+            simulate=cfg.simulate,
+            enabled=getattr(cfg, "arm_motion_enabled", False),
+            sim_time_scale=scale,
+        )
+    onyx = None
+    if getattr(cfg, "onyx_enabled", False):
+        onyx = OnyxBackend(
+            host=getattr(cfg, "onyx_host", "127.0.0.1"),
+            port=getattr(cfg, "onyx_port", 0),
+            transport=getattr(cfg, "onyx_transport", "usb"),
+            simulate=cfg.simulate,
+            armed=getattr(cfg, "onyx_armed", False),
+            sim_time_scale=scale,
+        )
+    return Devices(lh=lh, hs=hs, tc=tc, reader=reader, magnet=magnet, cfg=cfg,
+                   sorter=sorter, arm=arm, onyx=onyx)
 
 
 def _build_liquid_handler(cfg: RunConfig, deckmap):

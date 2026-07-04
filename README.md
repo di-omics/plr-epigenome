@@ -102,6 +102,18 @@ cfg = NormConfig(num_samples=96, source_volume_ul=12.0,
 report = asyncio.run(PlateNormalization(cfg).run())   # -> counts + per-well plan
 ```
 
+## HyDrop scATAC with an Onyx droplet-generation bridge
+
+Automates HyDrop single-cell ATAC library prep by pairing the STAR (wet chemistry) with a Droplet Genomics / Atrandi **Onyx** (droplet generation), connected by a **PLR-driven robot arm** that carries labware between them. The arm is a reusable inter-instrument bridge, so the same abstraction also handles the FACSMelody plate handoff.
+
+Protocol basis: the HyDrop ATAC methods in [De Rop et al., Nat Biotechnol 42:916-926 (2024)](https://doi.org/10.1038/s41587-023-01881-x). The STAR does nuclei prep, tagmentation, and co-encapsulation assembly; the arm carries the loaded chip to the Onyx; the Onyx generates the emulsion; the arm carries it to the ODTC for linear amplification; the STAR finishes with emulsion break, Dynabead/Ampure cleanup, index PCR, size selection, and Tecan QC.
+
+```bash
+python -m tipseq_plr.hydrop_atac.run --samples 8 --simulate -v
+```
+
+The log shows the handoffs: `arm: pick onyx_chip from star_transfer -> place at onyx_load`, `Onyx: generate droplets -> collected 100 uL`, `arm: ... emulsion_plate onyx_output -> odtc_nest`. Two new backends make it work: [`RobotArmBackend`](tipseq_plr/backends/robot_arm.py) (generic arm over taught transfer sites, live motion gated behind `enabled=True` and a speed cap) and [`OnyxBackend`](tipseq_plr/backends/droplet_genomics_onyx.py) (pressure-driven droplet generation, actuation gated behind `armed=True`). Full playbook: [docs/hydrop-onyx-bridge.md](docs/hydrop-onyx-bridge.md).
+
 ## Going live
 
 `--simulate` is the default and everything above is real PyLabRobot API surface. To run on hardware:
@@ -123,11 +135,13 @@ tipseq_plr/
   config.py          all parameters (volumes/temps/times), paper-traceable, no PLR import
   deck.py            STAR deck layout; labware pinning; version-tolerant fallbacks
   reagents.py        reagent -> reservoir map; prep-sheet planner; dead-volume guard
-  devices.py         uniform async wrappers over STAR / HHS / ODTC / reader / magnet
+  devices.py         uniform async wrappers over STAR / HHS / ODTC / reader / magnet / arm / onyx
   backends/
     inheco_odtc.py   SiLA-ready ODTC thermocycler backend (+ simulation)
     tecan_pro200.py  Tecan Infinite 200 Pro reader backend (+ simulation)
     bd_facsmelody.py BD FACSMelody sorter backend; loads a decoded ProtocolMap
+    robot_arm.py     generic PLR-driven inter-instrument arm (taught sites, gated)
+    droplet_genomics_onyx.py  Onyx droplet-generation backend (+ simulation)
   reverse_engineering/   FACSMelody RE toolkit (Rick Wierenga methodology)
     model.py         Command / ProtocolMap / CaptureFrame data model
     transport_discovery.py  find the USB/serial/TCP link
@@ -146,10 +160,15 @@ tipseq_plr/
     plan.py          pure normalization math (per-well sample/water plan)
     protocol.py      PlateNormalization: assay prep -> read -> quantify -> transfer
     run.py           CLI
+  hydrop_atac/       HyDrop scATAC prep with an Onyx droplet-gen step (arm-bridged)
+    config.py        HyDrop buffers / volumes / thermal programs (paper-traceable)
+    protocol.py      HyDropATAC: STAR -> arm -> Onyx -> arm -> STAR orchestration
+    run.py           CLI
   protocol.py        TipSeqProtocol orchestrator (incl. FACS handoff / sorter)
   run.py             CLI
-docs/facs-melody-re.md  reverse-engineering playbook
-tests/               dry-mode smoke + logic tests (protocol + RE toolkit)
+docs/facs-melody-re.md      FACSMelody reverse-engineering playbook
+docs/hydrop-onyx-bridge.md  HyDrop + Onyx + robot-arm playbook
+tests/               dry-mode smoke + logic tests (all protocols + toolkits)
 ```
 
 Design rules: step code never imports a vendor backend or branches on sim/real, it only calls `devices.py` wrappers and `LiquidOps`. Swapping an instrument is a one-line change in `build_devices`.
