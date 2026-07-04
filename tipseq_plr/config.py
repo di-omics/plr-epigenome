@@ -35,6 +35,9 @@ class Method(str, Enum):
     BULK_TIPSEQ = "bulk_tipseq"
     PLATE_TIPSEQ = "plate_tipseq"
     SCITIP_SEQ = "scitip_seq"
+    # CUT&Tag is TIP-seq's front half (conA -> antibodies -> pA-Tn5 -> tagment)
+    # followed by direct PCR instead of the IVT/cDNA linear-amplification cascade.
+    CUT_AND_TAG = "cut_and_tag"
 
 
 @dataclass(frozen=True)

@@ -27,6 +27,7 @@ Every runnable method lives under **[`tipseq_plr/protocols/`](tipseq_plr/protoco
 | Protocol | Directory | What it does | CLI |
 |---|---|---|---|
 | **(sci)TIP-seq** | [`protocols/tipseq/`](tipseq_plr/protocols/tipseq) | single-cell epigenomic library prep (Bartlett 2021); plate / bulk / sci variants, with an optional FACSMelody sort to close the sci path | `python -m tipseq_plr.protocols.tipseq.run` |
+| **CUT&Tag** | [`protocols/cut_and_tag/`](tipseq_plr/protocols/cut_and_tag) | chromatin profiling (Kaya-Okur 2019); TIP-seq's front half then direct indexing PCR instead of IVT | `python -m tipseq_plr.protocols.cut_and_tag.run` |
 | **Plate normalization** | [`protocols/normalization/`](tipseq_plr/protocols/normalization) | Qubit HS quant on the Tecan, then normalize a 96-well plate to a uniform concentration | `python -m tipseq_plr.protocols.normalization.run` |
 | **HyDrop scATAC** | [`protocols/hydrop_atac/`](tipseq_plr/protocols/hydrop_atac) | droplet-based scATAC (De Rop 2024); STAR wet chemistry bridged to an Onyx droplet generator by a robot arm | `python -m tipseq_plr.protocols.hydrop_atac.run` |
 
@@ -91,6 +92,16 @@ python -m tipseq_plr.reverse_engineering.cli mark --out marks.json      # label 
 python -m tipseq_plr.reverse_engineering.cli decode --capture cap.pcapng --marks marks.json --out protocol.json
 python -m tipseq_plr.reverse_engineering.cli coverage --protocol protocol.json
 ```
+
+## CUT&Tag
+
+Chromatin profiling by CUT&Tag (Kaya-Okur et al. 2019). CUT&Tag is TIP-seq's front half: it shares the exact same conA capture, primary and secondary antibody, pA-Tn5 binding, and tagmentation stages. The only difference is the tail: the pA-Tn5 carries standard Nextera ME-A/B adapters (not the ME-T7 transposon), so the tagmented, purified gDNA goes straight into indexing PCR instead of IVT and cDNA synthesis.
+
+```bash
+python -m tipseq_plr.protocols.cut_and_tag.run --samples 96 --simulate -v
+```
+
+Because it reuses the shared [`steps/binding.py`](tipseq_plr/steps/binding.py) and [`steps/tagmentation.py`](tipseq_plr/steps/tagmentation.py) stages, the CUT&Tag orchestrator is short: front half, 2.0x SPRI purify, indexing PCR (12 to 15 cycles, 14 default), 1.1x cleanup, Tecan QC. Cells stay on conA beads throughout, so like plate/bulk TIP-seq it runs fully autonomously with no sort. This is also the clearest illustration of the shared-infrastructure design: a second published method drops in as a thin orchestrator over the same stages.
 
 ## Plate normalization (Qubit HS)
 
@@ -168,6 +179,10 @@ tipseq_plr/
   protocols/
     tipseq/          (sci)TIP-seq orchestrator + CLI (incl. FACS handoff / sorter)
       protocol.py    TipSeqProtocol
+      run.py         CLI
+    cut_and_tag/     CUT&Tag: shared front half + direct indexing PCR
+      config.py      CutAndTagConfig (PCR tail; reuses TIP-seq buffers)
+      protocol.py    CutAndTag orchestrator
       run.py         CLI
     normalization/   Qubit HS quant + 96-well normalization
       config.py      NormConfig / QubitHS assay parameters

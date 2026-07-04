@@ -24,6 +24,7 @@ dev = ["pytest>=7", "pytest-asyncio>=0.21"]
 
 [project.scripts]
 tipseq-run = "tipseq_plr.protocols.tipseq.run:main"
+cutandtag-run = "tipseq_plr.protocols.cut_and_tag.run:main"
 normalize-run = "tipseq_plr.protocols.normalization.run:main"
 hydrop-run = "tipseq_plr.protocols.hydrop_atac.run:main"
 
