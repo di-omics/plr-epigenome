@@ -9,7 +9,10 @@ description = "PyLabRobot automation of (sci)TIP-seq for Hamilton STAR (ODTC + H
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
-authors = [{ name = "" }]
+authors = [
+    { name = "Di Hu", email = "di.hu.58ave@gmail.com" },
+    { name = "di-omics", email = "noreply" },
+]
 keywords = ["lab-automation", "pylabrobot", "hamilton-star", "tip-seq", "cut-and-tag", "epigenomics"]
 dependencies = [
     "pylabrobot>=0.1.6",
