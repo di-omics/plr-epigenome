@@ -24,14 +24,35 @@ Instruments driven:
 
 Every runnable method lives under **[`tipseq_plr/protocols/`](tipseq_plr/protocols)**, one self-contained package per protocol. They all compose the same shared infrastructure at the package root (`config`, `deck`, `devices`, `reagents`, `backends`, `steps`), so a protocol package only holds what is specific to that method: its parameters, its orchestration, and its CLI.
 
-| Protocol | Directory | What it does | CLI |
-|---|---|---|---|
-| **(sci)TIP-seq** | [`protocols/tipseq/`](tipseq_plr/protocols/tipseq) | single-cell epigenomic library prep (Bartlett 2021); plate / bulk / sci variants, with an optional FACSMelody sort to close the sci path | `python -m tipseq_plr.protocols.tipseq.run` |
-| **CUT&Tag** | [`protocols/cut_and_tag/`](tipseq_plr/protocols/cut_and_tag) | chromatin profiling (Kaya-Okur 2019); TIP-seq's front half then direct indexing PCR instead of IVT | `python -m tipseq_plr.protocols.cut_and_tag.run` |
-| **Plate normalization** | [`protocols/normalization/`](tipseq_plr/protocols/normalization) | Qubit HS quant on the Tecan, then normalize a 96-well plate to a uniform concentration | `python -m tipseq_plr.protocols.normalization.run` |
-| **HyDrop scATAC** | [`protocols/hydrop_atac/`](tipseq_plr/protocols/hydrop_atac) | droplet-based scATAC (De Rop 2024); STAR wet chemistry bridged to an Onyx droplet generator by a robot arm | `python -m tipseq_plr.protocols.hydrop_atac.run` |
+| Protocol | Directory | What it does | Status | CLI |
+|---|---|---|---|---|
+| **(sci)TIP-seq** | [`protocols/tipseq/`](tipseq_plr/protocols/tipseq) | single-cell epigenomic library prep (Bartlett 2021); plate / bulk / sci variants, with an optional FACSMelody sort to close the sci path | untested | `python -m tipseq_plr.protocols.tipseq.run` |
+| **CUT&Tag** | [`protocols/cut_and_tag/`](tipseq_plr/protocols/cut_and_tag) | chromatin profiling (Kaya-Okur 2019); TIP-seq's front half then direct indexing PCR instead of IVT | untested | `python -m tipseq_plr.protocols.cut_and_tag.run` |
+| **Plate normalization** | [`protocols/normalization/`](tipseq_plr/protocols/normalization) | Qubit HS quant on the Tecan, then normalize a 96-well plate to a uniform concentration | untested | `python -m tipseq_plr.protocols.normalization.run` |
+| **HyDrop scATAC** | [`protocols/hydrop_atac/`](tipseq_plr/protocols/hydrop_atac) | droplet-based scATAC (De Rop 2024); STAR wet chemistry bridged to an Onyx droplet generator by a robot arm | untested | `python -m tipseq_plr.protocols.hydrop_atac.run` |
+
+**Status** is the validation tier (see [Validation](#validation-and-confidence)). All four read `untested`: they run in simulation but have no paired Rhodamine B evidence yet. That is the honest label until a liquid test clears the bar.
 
 Each protocol package has the same shape: `config.py` (paper-traceable parameters), `protocol.py` (the orchestrator), `run.py` (a CLI), and any protocol-specific helpers (for example `normalization/plan.py`). A new protocol is a new folder here; it does not touch the shared root. Cross-cutting tooling that is not itself a protocol (the FACSMelody reverse-engineering harness) stays at the root under `reverse_engineering/`.
+
+## Validation and confidence
+
+The objective of this repo is a path from **PyLabRobot to a protocol on the Hamilton STAR to liquid-tested validation**, so a method can be trusted, not just simulated. Every protocol carries a validation tier that it only earns with data:
+
+| Tier | Meaning | Evidence |
+|---|---|---|
+| **untested** | PLR-authored, dry-runs in simulation. No physical evidence the STAR dispenses what the code says. | none (the starting point) |
+| **liquid_tested** | Liquid-handling accuracy and precision verified on the STAR. A claim about **volumes**, not biology. | a **Rhodamine B** assay with paired plate-reader data that clears the success criteria |
+| **biovalidated** | The protocol produces the expected biological result. | tracked **privately, not in this public repo** |
+
+A protocol is `liquid_tested` **only when** a Rhodamine B dispense series, read on the plate reader with paired data, passes all of: paired replicates present, every reading inside the reader's linear range, standard-curve R² ≥ 0.995, and per-volume accuracy and CV within tolerance (tolerances loosen below 10 uL and below 2 uL). No partial credit: if any check fails, it stays `untested` with the reasons listed. **Biovalidation is deliberately out of this public repo.** Full criteria and the evaluator: [docs/validation.md](docs/validation.md).
+
+```bash
+python -m tipseq_plr.validation.cli status                       # the confidence ladder
+python -m tipseq_plr.validation.cli evaluate --data run.json     # gate a Rhodamine B dataset
+```
+
+The evaluator ([`validation/rhodamine.py`](tipseq_plr/validation/rhodamine.py)) is a pure function and exits non-zero unless the bar is cleared, so it can gate CI or a release.
 
 ## Run it now (no hardware)
 
@@ -174,6 +195,10 @@ tipseq_plr/
   reverse_engineering/   FACSMelody RE toolkit (Rick Wierenga methodology; not a protocol)
     model.py / transport_discovery.py / chorus_probe.py / capture.py
     correlate.py / decode.py / replay.py / cli.py
+  validation/            liquid-test confidence framework (not a protocol)
+    status.py            ValidationTier ladder + per-protocol public status
+    rhodamine.py         Rhodamine B success criteria (accuracy / CV / range / R2)
+    cli.py               status | evaluate (gates the liquid_tested claim)
 
   # --- protocols: one self-contained package per runnable method ---
   protocols/
