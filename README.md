@@ -54,6 +54,19 @@ python -m tipseq_plr.validation.cli evaluate --data run.json     # gate a Rhodam
 
 The evaluator ([`validation/rhodamine.py`](tipseq_plr/validation/rhodamine.py)) is a pure function and exits non-zero unless the bar is cleared, so it can gate CI or a release.
 
+## From a plan to a run
+
+Planning tools stop at a Statement of Work: model, samples, targets, constraints. The value is the bridge from that plan to something that actually runs on the STAR. [`sow.py`](tipseq_plr/sow.py) compiles a Statement of Work (structured or free text) into a concrete plr-clarity protocol + config, carrying its validation tier, and can execute it.
+
+```bash
+# compile a plan to a runnable STAR protocol
+python -m tipseq_plr.sow plan --text "CUT&Tag for H3K27me3 and CTCF, 48 samples on the STAR"
+# ... then actually run it (simulation by default)
+python -m tipseq_plr.sow run  --text "sciTIP-seq, 96 samples, H3K27me3 / CTCF / RNAPII-Ser2P"
+```
+
+Routing is transparent keyword intent plus light parsing (protocol, sample count, antibody targets, sci vs plate), so a human sees and can correct the mapping before anything runs. The compiled plan reports which protocol it routed to, the extracted parameters, the CLI, and the current `validation_tier` (`untested` until a liquid test passes). Planning is cheap; this is the part that turns intent into a validated run.
+
 ## Run it now (no hardware)
 
 Everything runs in **simulation** with zero hardware and zero external drivers, PyLabRobot doesn't even need to be installed (it falls back to a logging "dry" mode). With PyLabRobot installed, simulation routes through its chatterbox backend so you see every atomic aspirate/dispense.
@@ -199,6 +212,7 @@ tipseq_plr/
     status.py            ValidationTier ladder + per-protocol public status
     rhodamine.py         Rhodamine B success criteria (accuracy / CV / range / R2)
     cli.py               status | evaluate (gates the liquid_tested claim)
+  sow.py                 Statement-of-Work compiler: plan text -> executable STAR run
 
   # --- protocols: one self-contained package per runnable method ---
   protocols/
