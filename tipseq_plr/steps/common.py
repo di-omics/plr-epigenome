@@ -19,17 +19,19 @@ from typing import List, Optional
 
 from .. import config as C
 from ..devices import _move_plate, _sleep
+from . import vision as V
 
 logger = logging.getLogger("tipseq.ops")
 
 
 class LiquidOps:
-    def __init__(self, devices, deckmap, registry, cfg):
+    def __init__(self, devices, deckmap, registry, cfg, vision=None):
         self.dev = devices
         self.lh = devices.lh
         self.deckmap = deckmap
         self.reg = registry
         self.cfg = cfg
+        self.vision = vision           # optional in-process CV checkpoints (None = off)
         self.dry = self.lh is None
         self.plate = deckmap.working_plate
         self.ncols = math.ceil(cfg.num_samples / 8)
@@ -163,17 +165,24 @@ class LiquidOps:
             await self._drop()
         await _sleep(cfg.timings.bead_bind, cfg)
 
-        # 2) engage magnet, pull supernatant
+        # 2) engage magnet, pull supernatant. CV checkpoints here: the reader is
+        # blind to bead loss, and this is where it happens.
         await self.dev.magnet.engage(self.lh, self.plate, settle_s=180)
+        if self.vision:
+            await self.vision.check(V.CHECK_BEAD_PELLET, step="spri_bind")
         await self.remove_supernatant()
+        if self.vision:
+            await self.vision.check(V.CHECK_SUPERNATANT, step="spri_bind")
 
         # 3) ethanol washes on the magnet
         for w in range(ethanol_washes):
             await self.add_reagent(C.ETHANOL_80, etoh_ul, new_tips_each_column=True)
             await _sleep(30, cfg)
             await self.remove_supernatant(volume_ul=etoh_ul)
-        # dry residual ethanol
+        # dry residual ethanol, then confirm the beads are glossy, not over-dried
         await _sleep(cfg.timings.bead_dry, cfg)
+        if self.vision:
+            await self.vision.check(V.CHECK_NOT_OVERDRIED, step="spri_dry")
 
         # 4) elute
         await self.dev.magnet.disengage(self.lh, self.plate, to_site=self.deckmap.hhs_site)

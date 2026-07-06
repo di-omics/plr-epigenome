@@ -142,6 +142,13 @@ class Ultra2Config:
     pool_target_ng_per_ul: float = 2.0
     pool_final_ul: float = 30.0
 
+    # in-process CV error handling at the reader-blind steps (SPRI beads, tips).
+    # Off by default; when on it aborts (or, monitor-only, just logs) on a fault.
+    # vision_fault_at injects a fault at a named checkpoint for tests/demos.
+    vision_enabled: bool = False
+    vision_abort_on_fault: bool = True
+    vision_fault_at: tuple = ()
+
     # device addressing (only used when simulate=False)
     star_id: str = "STAR"
     odtc_host: str = "192.168.1.50"

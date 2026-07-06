@@ -160,6 +160,52 @@ cfg = NormConfig(num_samples=96, source_volume_ul=12.0,
 report = asyncio.run(PlateNormalization(cfg).run())   # -> counts + per-well plan
 ```
 
+## DNA-seq + UMI (NEBNext Ultra II), closed loop
+
+An end-to-end library prep that turns fragmented DNA into sequencing-ready,
+UMI-tagged libraries on the STAR, then closes the loop with the plate reader.
+
+Flow: **End Prep -> UMI adaptor ligation -> SPRI cleanup or two-sided size
+selection -> indexing PCR -> PCR cleanup -> Tecan dsDNA quant**. The reader read
+is the loop: it gates every well `pass` / `dilute` / `fail` and computes a
+per-well pool plan (measured ng/uL sets each well's sample + water into the
+pool). Adaptor dilution and PCR cycle count derive from input mass (NEB
+E7645/E7103 tables). TapeStation size QC has no automated interface yet, so it is
+a manual operator handoff (`resume_after_tapestation`).
+
+```bash
+python -m tipseq_plr.protocols.dna_ultra2_umi.run --samples 96 --input-ng 100 --simulate -v
+python -m tipseq_plr.protocols.dna_ultra2_umi.run --size-select --insert-bp 300 --input-ng 500
+```
+
+### Why computer vision when there is already QC
+
+The plate-reader QC and in-process CV catch different failures, so they compose
+rather than replace each other:
+
+| | catches | when |
+| --- | --- | --- |
+| **reader QC** | did the chemistry work (per-well yield) | terminal, after the run |
+| **CV checkpoints** | did the step execute (bead loss, no pellet, over-dried beads, missed tips) | in-process, at the failing step |
+
+The reader is blind to the most failure-prone moment in library prep, SPRI bead
+handling, and only reports low yield at the very end, with no cause. So CV is
+added surgically at exactly those reader-blind steps as an optional guard: it
+verifies the bead pellet formed, the supernatant cleared without pulling beads,
+and the beads are not over-dried, and it aborts (or, `--vision-monitor`, just
+flags) the moment a fault is seen, before the run wastes PCR and QC on a dead
+plate.
+
+```bash
+# inject a bead-loss fault; the CV checkpoint aborts before PCR/QC
+python -m tipseq_plr.protocols.dna_ultra2_umi.run --vision --vision-fault-at bead_pellet_formed
+```
+
+The checks are a pluggable seam ([`steps/vision.py`](tipseq_plr/steps/vision.py)):
+`SimVision` runs everywhere with no camera (and injects faults for tests), while
+`LabCvVision` drops the real detector in behind the same interface, backed by the
+[di-omics/lab-cv](https://github.com/di-omics/lab-cv) stack.
+
 ## HyDrop scATAC with an Onyx droplet-generation bridge
 
 Automates HyDrop single-cell ATAC library prep by pairing the STAR (wet chemistry) with a Droplet Genomics / Atrandi **Onyx** (droplet generation), connected by a **PLR-driven robot arm** that carries labware between them. The arm is a reusable inter-instrument bridge, so the same abstraction also handles the FACSMelody plate handoff.

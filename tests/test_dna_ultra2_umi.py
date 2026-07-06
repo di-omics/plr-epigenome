@@ -62,3 +62,30 @@ def test_end_to_end_size_select_path():
     report = asyncio.run(Ultra2DnaUmi(_cfg(num_samples=24, input_ng=500, size_select=True)).run())
     assert sum(report["counts"].values()) == 24
     assert len(report["pool_plan"]) == 24
+
+
+def test_vision_clean_run_completes():
+    report = asyncio.run(Ultra2DnaUmi(_cfg(num_samples=8, vision_enabled=True)).run())
+    assert report["status"] == "complete"
+    assert report["vision_faults"] == 0
+    assert report["vision_log"]                       # checkpoints actually ran
+
+
+def test_vision_fault_aborts_before_qc():
+    from tipseq_plr.steps.vision import CHECK_BEAD_PELLET
+    cfg = _cfg(num_samples=8, vision_enabled=True, vision_fault_at=(CHECK_BEAD_PELLET,))
+    report = asyncio.run(Ultra2DnaUmi(cfg).run())
+    assert report["status"] == "aborted"
+    assert "bead_pellet" in report["vision_fault"]
+    assert report["counts"] == {"pass": 0, "dilute": 0, "fail": 0}   # never reached QC
+    assert report["vision_faults"] >= 1
+
+
+def test_vision_monitor_only_does_not_abort():
+    from tipseq_plr.steps.vision import CHECK_NOT_OVERDRIED
+    cfg = _cfg(num_samples=8, vision_enabled=True, vision_abort_on_fault=False,
+               vision_fault_at=(CHECK_NOT_OVERDRIED,))
+    report = asyncio.run(Ultra2DnaUmi(cfg).run())
+    assert report["status"] == "complete"             # monitor-only: logged, not aborted
+    assert report["vision_faults"] >= 1
+    assert sum(report["counts"].values()) == 8         # QC still ran

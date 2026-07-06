@@ -30,6 +30,8 @@ from ...devices import build_devices, _sleep
 from ...reagents import ReagentRegistry
 from ...steps.common import LiquidOps
 from ...steps import thermal, qc
+from ...steps import vision as V
+from ...steps.vision import build_vision, VisionFault
 from ...backends import ProfileStep
 from .config import Ultra2Config, adaptor_dilution
 
@@ -48,7 +50,11 @@ class Ultra2DnaUmi:
         self.deckmap = build_deck(self.cfg.num_samples)
         self.registry = ReagentRegistry.build()
         self.devices = build_devices(_as_run_config(self.cfg), self.deckmap)
-        self.ops = LiquidOps(self.devices, self.deckmap, self.registry, self.cfg)
+        self.vision = build_vision(
+            self.cfg.vision_enabled, fault_at=self.cfg.vision_fault_at,
+            abort_on_fault=self.cfg.vision_abort_on_fault, simulate=self.cfg.simulate)
+        self.ops = LiquidOps(self.devices, self.deckmap, self.registry, self.cfg,
+                             vision=self.vision)
         # fragmented DNA is already loaded in the working plate at input volume
         for c in range(self.ops.ncols):
             self.ops.well_volume_ul[c] = self.cfg.endprep.dna_ul
@@ -112,6 +118,8 @@ class Ultra2DnaUmi:
         await self.ops.add_reagent(C.SPRI_BEADS, second, mix=True, new_tips_each_column=True)
         await _sleep(self.cfg.timings.bead_bind, self.cfg)
         await self.devices.magnet.engage(self.ops.lh, self.ops.plate, settle_s=180)
+        if self.vision:
+            await self.vision.check(V.CHECK_BEAD_PELLET, step="size_select_bind")
         await self.ops.remove_supernatant()
         for _ in range(ss.etoh_washes):
             await self.ops.add_reagent(C.ETHANOL_80, ss.etoh_ul, new_tips_each_column=True)
@@ -198,18 +206,31 @@ class Ultra2DnaUmi:
         logger.info("### NEBNext Ultra II DNA + UMI start: %d samples, %.0f ng input, simulate=%s",
                     self.cfg.num_samples, self.cfg.input_ng, self.cfg.simulate)
         await self.devices.setup()
+        report: dict = {"status": "complete"}
         try:
-            await self._end_prep()
-            await self._ligation()
-            await self._cleanup_or_size_select()
-            await self._pcr()
-            await self._pcr_cleanup()
-            report = await self._qc_and_pool()
-            tier = PROTOCOL_STATUS.get("dna_ultra2_umi", {}).get("tier")
-            report["validation_tier"] = tier.value if tier is not None else "untested"
-            report["pcr_cycles"] = self.cfg.cycles()
-            await self._tapestation_handoff(report)
-            logger.info("### run complete: %s", report["counts"])
+            try:
+                await self._end_prep()
+                await self._ligation()
+                await self._cleanup_or_size_select()
+                await self._pcr()
+                await self._pcr_cleanup()
+                report.update(await self._qc_and_pool())
+                tier = PROTOCOL_STATUS.get("dna_ultra2_umi", {}).get("tier")
+                report["validation_tier"] = tier.value if tier is not None else "untested"
+                report["pcr_cycles"] = self.cfg.cycles()
+                await self._tapestation_handoff(report)
+                logger.info("### run complete: %s", report["counts"])
+            except VisionFault as vf:
+                # in-process CV caught a fault the plate reader could not see, and
+                # caught it in time: abort before spending PCR/QC on a dead plate.
+                report["status"] = "aborted"
+                report["vision_fault"] = str(vf)
+                report.setdefault("counts", {"pass": 0, "dilute": 0, "fail": 0})
+                report.setdefault("pool_plan", [])
+                logger.error("### run aborted by CV checkpoint: %s", vf)
+            if self.vision is not None:
+                report["vision_log"] = [vars(v) for v in self.vision.log]
+                report["vision_faults"] = len(self.vision.faults)
             return report
         finally:
             await self.devices.stop()

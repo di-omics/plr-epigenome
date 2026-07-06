@@ -29,6 +29,12 @@ def _parse(argv=None):
                    help="two-sided SPRI size selection instead of the 0.7X cleanup")
     p.add_argument("--insert-bp", type=int, default=150, help="target insert size for size selection")
     p.add_argument("--cycles", type=int, default=0, help="override PCR cycles (0 = derive from input)")
+    p.add_argument("--vision", action="store_true",
+                   help="in-process CV error handling at the SPRI/tip steps (reader-blind failures)")
+    p.add_argument("--vision-monitor", action="store_true",
+                   help="with --vision: log CV faults but do not abort (monitor only)")
+    p.add_argument("--vision-fault-at", default="",
+                   help="inject a fault at this checkpoint, e.g. bead_pellet_formed (demo/testing)")
     sim = p.add_mutually_exclusive_group()
     sim.add_argument("--simulate", dest="simulate", action="store_true", default=True)
     sim.add_argument("--no-simulate", dest="simulate", action="store_false")
@@ -41,6 +47,8 @@ async def _amain(a) -> int:
     cfg = Ultra2Config(
         num_samples=a.samples, input_ng=a.input_ng, size_select=a.size_select,
         pcr_cycles_override=a.cycles, simulate=a.simulate,
+        vision_enabled=a.vision, vision_abort_on_fault=not a.vision_monitor,
+        vision_fault_at=tuple(x for x in [a.vision_fault_at] if x),
     )
     cfg.sizeselect.insert_bp = a.insert_bp
     setattr(cfg, "_sim_time_scale", 0.0)
@@ -48,10 +56,12 @@ async def _amain(a) -> int:
     report = await Ultra2DnaUmi(cfg).run()
 
     print(json.dumps({
+        "status": report.get("status"),
         "validation_tier": report.get("validation_tier"),
         "pcr_cycles": report.get("pcr_cycles"),
         "counts": report["counts"],
-        "standard_curve": report["standard_curve"],
+        "vision_faults": report.get("vision_faults"),
+        "vision_fault": report.get("vision_fault"),
         "tapestation": report.get("tapestation"),
         "pool_plan_head": report["pool_plan"][:8],
     }, indent=2))
