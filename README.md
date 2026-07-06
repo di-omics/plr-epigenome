@@ -1,4 +1,4 @@
-# tipseq-plr
+# plr-clarity
 
 Automated **(sci)TIP-seq** on a **Hamilton STAR**, written in [PyLabRobot](https://docs.pylabrobot.org).
 
