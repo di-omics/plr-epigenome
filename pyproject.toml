@@ -10,8 +10,7 @@ readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
 authors = [
-    { name = "Di Hu", email = "di.hu.58ave@gmail.com" },
-    { name = "di-omics", email = "noreply" },
+    { name = "Di Hu", email = "255010011+di-omics@users.noreply.github.com" },
 ]
 keywords = ["lab-automation", "pylabrobot", "hamilton-star", "tip-seq", "cut-and-tag", "epigenomics"]
 dependencies = [
