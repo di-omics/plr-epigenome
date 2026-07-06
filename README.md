@@ -206,6 +206,39 @@ The checks are a pluggable seam ([`steps/vision.py`](tipseq_plr/steps/vision.py)
 `LabCvVision` drops the real detector in behind the same interface, backed by the
 [di-omics/lab-cv](https://github.com/di-omics/lab-cv) stack.
 
+## Discovering a minimal effective reaction
+
+The same closed loop that verifies one run can, iterated under a cost budget,
+DISCOVER the cheapest recipe that still yields a decisionable result. That is the
+`discovery/` module: a plant-and-recover harness, no hardware.
+
+It plants a known cheapest-feasible recipe on a synthetic response surface, then
+lets a cost-constrained agent (a kernel-surrogate, Bayesian-optimization-lite
+loop) rediscover it blind under a run budget, and scores how close it got and how
+few runs it took. In production, evaluating a candidate means compiling a
+dna_ultra2_umi config to a runnable STAR method and reading the Tecan QC; here the
+surface stands in for that so recovery can be scored against a known answer.
+
+```bash
+python -m tipseq_plr.discovery.run --seed 1 -v
+```
+
+Two things the demo shows, honestly:
+
+- **Recovery vs brute force.** The agent recovers a feasible, near-minimal recipe
+  in about 60 runs, against roughly 17,576 for an exhaustive 26-per-knob grid.
+- **CV-cleaning keeps the search honest.** A run can suffer a mechanical fault
+  (bead loss); the CV layer flags it. The `bo_honest` arm excludes flagged faults
+  and re-runs, while `bo_naive` keeps them, so a botched well reads as a bad
+  recipe. Over fixed seeds, honest recovers a feasible minimal recipe far more
+  often than naive and at lower cost: the faults masquerade as chemistry failures
+  and pull the naive search to a costlier recipe.
+
+On this smooth 3-knob surface, uniform space-filling (`random`) is a strong
+baseline and is reported alongside; the point is the closed loop and the fault
+handling, not beating random. Every discovered recipe is a candidate for the
+validation ladder, which confirms it with a liquid test before it is trusted.
+
 ## HyDrop scATAC with an Onyx droplet-generation bridge
 
 Automates HyDrop single-cell ATAC library prep by pairing the STAR (wet chemistry) with a Droplet Genomics / Atrandi **Onyx** (droplet generation), connected by a **PLR-driven robot arm** that carries labware between them. The arm is a reusable inter-instrument bridge, so the same abstraction also handles the FACSMelody plate handoff.
