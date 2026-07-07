@@ -2,6 +2,18 @@
 
 Automated **(sci)TIP-seq** on a **Hamilton STAR**, written in [PyLabRobot](https://docs.pylabrobot.org).
 
+## Why (sci)TIP-seq
+
+Most disease-associated variation is regulatory, not coding. GWAS risk loci sit
+overwhelmingly in non-coding DNA, and whether a variant matters depends on the cell
+type it acts in, because each cell type carries its own epigenomic landscape.
+(sci)TIP-seq reads that layer directly: transcription-factor binding and non-coding
+regulatory elements at high sensitivity and single-cell resolution. That turns a
+statistical GWAS hit into a mechanistic question you can answer, which cell type's
+regulatory wiring a risk locus perturbs, the step from a variant toward a target.
+Running it at the scale that question needs is what automating it on a STAR makes
+feasible.
+
 Turns the published protocol:
 
 > Bartlett, Dileep, Handa, Ohkawa, Kimura, Henikoff, Gilbert (2021).
