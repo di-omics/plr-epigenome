@@ -1,22 +1,10 @@
-# Reverse-engineering the BD FACSMelody to close the sciTIP-seq sort gap
+# Reverse-engineering the BD FACSMelody: a draft toward plate-based sort automation
 
-The one step in sciTIP-seq a Hamilton STAR can't do is the **FACS re-distribution
-of pooled index-1 cells into the index-2 plate**. This is the playbook for making
-the [BD FACSMelody](https://www.bdbiosciences.com) drive that sort automatically,
-so the pipeline runs closed-loop.
-
-It applies the methodology **Rick Wierenga** used to build PyLabRobot's device
-backends: don't invent a protocol, work down to the OEM's own command layer,
-sniff the OEM↔device traffic, correlate each UI action to its bytes, decode the
-framing, and replay with PyUSB/pyserial before wrapping it in a backend. (See
-his talk *"How To Reverse Engineer Lab Equipment"* and the
-[PyLabRobot paper](https://pmc.ncbi.nlm.nih.gov/articles/PMC10369895/), whose STAR
-and EVO backends were built from OEM firmware command strings + captured traffic.)
-
-The toolkit lives in [`tipseq_plr/reverse_engineering/`](../tipseq_plr/reverse_engineering).
-Its deliverable is a **`ProtocolMap`** (a JSON of decoded commands); the runtime
-[`BDFACSMelodyBackend`](../tipseq_plr/backends/bd_facsmelody.py) loads it and the
-FACS step becomes a normal device call.
+Plate-based single-cell sequencing often needs a FACS sort into a plate, and
+that's one step a liquid handler like the Hamilton STAR can't do on its own. This
+is an early draft of an approach to driving the [BD FACSMelody](https://www.bdbiosciences.com)
+programmatically so that step can run closed-loop. The case that motivated it is
+the index re-distribution in sciTIP-seq, but the sort-to-plate primitive is general.
 
 ## What the sort actually has to do
 
