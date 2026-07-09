@@ -1,0 +1,13 @@
+# Python virtual environment (live on starpi, not source)
+env/
+
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+
+# Editor / revert backups
+*.bak
+*.pre_revert*
+
+# Claude Code machine-local settings
+.claude/settings.local.json

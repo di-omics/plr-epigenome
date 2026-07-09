@@ -48,6 +48,27 @@ Every runnable method lives under **[`tipseq_plr/protocols/`](tipseq_plr/protoco
 
 Each protocol package has the same shape: `config.py` (paper-traceable parameters), `protocol.py` (the orchestrator), `run.py` (a CLI), and any protocol-specific helpers (for example `normalization/plan.py`). A new protocol is a new folder here; it does not touch the shared root. Cross-cutting tooling that is not itself a protocol (the FACSMelody reverse-engineering harness) stays at the root under `reverse_engineering/`.
 
+## Hamilton STAR hardware dev (`hamilton-star/`)
+
+[`hamilton-star/`](hamilton-star) is the on-instrument development for a physical
+Hamilton Microlab STAR, driven by PyLabRobot on a dedicated Raspberry Pi. Where
+`tipseq_plr/` is simulation-first, this is the code that actually moves the deck:
+whole-genome sequencing and targeted PCR liquid handling, iSWAP plate moves, and heater-shaker
+steps, developed and validated dry, with real-reagent runs gated behind typed
+confirmation tokens.
+
+| Path | What it is |
+|---|---|
+| [`hamilton-star/protocols/`](hamilton-star/protocols) | curated Bio Validation 0 runners (whole-genome sequencing, targeted PCR) |
+| [`hamilton-star/starlab_live/`](hamilton-star/starlab_live) | full live working set mirrored from the Pi, the source of truth for what runs on the instrument |
+| [`hamilton-star/setup/`](hamilton-star/setup) | Pi setup and safe-startup notes; the Pi password and lab-internal IPs are kept private and appear here only as placeholders |
+| [`hamilton-star/run_on_pi.sh`](hamilton-star/run_on_pi.sh) | sync this repo to the Pi and run a chosen script in the instrument venv, without disturbing the Pi's own working directory |
+
+Each script is self-contained: it builds its own `LiquidHandler` and STAR deck,
+so any of them runs from any directory once the PyLabRobot venv is active. Start
+with `run_on_pi.sh starlab_live/test_star_no_autoload.py`, which initializes the
+STAR without autoload movement.
+
 ## Validation and confidence
 
 The objective of this repo is a path from **PyLabRobot to a protocol on the Hamilton STAR to liquid-tested validation**, so a method can be trusted, not just simulated. Every protocol carries a validation tier that it only earns with data:
