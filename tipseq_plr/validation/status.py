@@ -1,7 +1,7 @@
 """
 Confidence ladder for every protocol in this repo.
 
-The objective of plr-clarity: take a protocol from PyLabRobot, make it run on a
+The objective of plr-epigenome: take a protocol from PyLabRobot, make it run on a
 Hamilton STAR, and then offer *liquid-tested validation* so a user can trust it.
 A protocol advances up this ladder only by earning it with data.
 

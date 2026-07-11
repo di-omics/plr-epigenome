@@ -9,7 +9,7 @@ Plate-normalization protocol.
          concentration and volume
 
 Reuses the repo's STAR deck and Tecan backend. Runs fully in simulation (and
-even without PyLabRobot, in a logging dry mode) like the rest of plr-clarity.
+even without PyLabRobot, in a logging dry mode) like the rest of plr-epigenome.
 
 Deck roles (from deck.build_deck):
     working_plate -> SOURCE   (the 96 x 12 uL input)

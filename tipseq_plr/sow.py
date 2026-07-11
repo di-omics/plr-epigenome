@@ -4,7 +4,7 @@ Statement-of-Work compiler: turn a plan into an executable STAR run.
 A planning tool (Augmentiv, a PI's email, a protocols.io page) produces a
 Statement of Work: model, samples, targets, endpoints, constraints. That is
 where most tools stop. This module takes the SoW and *compiles it* to a concrete
-plr-clarity protocol + config that runs on the Hamilton STAR and carries a
+plr-epigenome protocol + config that runs on the Hamilton STAR and carries a
 validation tier. Planning is cheap; the value is the bridge to execution.
 
     sow = SoW.from_text(augmentiv_sow_text)

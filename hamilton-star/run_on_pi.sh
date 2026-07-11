@@ -2,7 +2,7 @@
 #
 # Run a hamilton-star script on the Pi-controlled Hamilton STAR, from this repo.
 #
-# Dev lives here in plr-clarity. This script syncs the hamilton-star/ tree to a
+# Dev lives here in plr-epigenome. This script syncs the hamilton-star/ tree to a
 # dedicated run directory on the Pi and executes the chosen script in the
 # existing PyLabRobot venv. It never writes to the Pi's own ~/star-lab working
 # directory, so live work there is not clobbered.
@@ -21,7 +21,7 @@ set -euo pipefail
 
 PI="${PI:-starpi}"                 # ssh alias, see ~/.ssh/config
 VENV="${VENV:-\$HOME/star-lab/env}"   # existing PyLabRobot venv on the Pi
-REMOTE="${REMOTE:-plr-clarity-run}"   # dedicated run dir on the Pi (not ~/star-lab)
+REMOTE="${REMOTE:-plr-epigenome-run}"   # dedicated run dir on the Pi (not ~/star-lab)
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 

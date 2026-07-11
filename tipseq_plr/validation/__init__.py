@@ -1,7 +1,7 @@
 """
 Liquid-test validation framework.
 
-The confidence ladder for plr-clarity: a protocol goes from PLR-authored
+The confidence ladder for plr-epigenome: a protocol goes from PLR-authored
 (UNTESTED, simulation only), to LIQUID_TESTED (Rhodamine B accuracy + precision
 verified on the STAR with paired plate-reader data, per the criteria in
 `rhodamine.py`), to BIOVALIDATED (with biology; tracked privately, never in this

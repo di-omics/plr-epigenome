@@ -2,7 +2,7 @@
 
 ## The objective
 
-plr-clarity takes a protocol from PyLabRobot, makes it run on a **Hamilton STAR**,
+plr-epigenome takes a protocol from PyLabRobot, makes it run on a **Hamilton STAR**,
 and then offers **liquid-tested validation** so a user can trust it in the lab.
 Simulation proves the *logic* of a method. It proves nothing about whether the
 STAR physically delivers the volumes the code asks for. This framework closes

@@ -1,4 +1,4 @@
-# plr-clarity
+# plr-epigenome
 
 Automated **(sci)TIP-seq** on a **Hamilton STAR**, written in [PyLabRobot](https://docs.pylabrobot.org).
 
@@ -90,7 +90,7 @@ The evaluator ([`validation/rhodamine.py`](tipseq_plr/validation/rhodamine.py)) 
 
 ## From a plan to a run
 
-Planning tools stop at a Statement of Work: model, samples, targets, constraints. The value is the bridge from that plan to something that actually runs on the STAR. [`sow.py`](tipseq_plr/sow.py) compiles a Statement of Work (structured or free text) into a concrete plr-clarity protocol + config, carrying its validation tier, and can execute it.
+Planning tools stop at a Statement of Work: model, samples, targets, constraints. The value is the bridge from that plan to something that actually runs on the STAR. [`sow.py`](tipseq_plr/sow.py) compiles a Statement of Work (structured or free text) into a concrete plr-epigenome protocol + config, carrying its validation tier, and can execute it.
 
 ```bash
 # compile a plan to a runnable STAR protocol
