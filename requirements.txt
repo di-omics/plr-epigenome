@@ -1,5 +1,5 @@
 # Core automation stack. Pin to your validated versions before a production run.
-pylabrobot>=0.1.6            # LiquidHandler + STARBackend, plate_reading, heating_shaking, thermocycling
+pylabrobot>=0.2.1,<0.3      # LiquidHandler + STARBackend, plate_reading, heating_shaking, thermocycling
 
 # Optional, only needed for a LIVE (non-simulated) run:
 # sila2>=0.10               # SiLA 2 client for the Inheco ODTC backend

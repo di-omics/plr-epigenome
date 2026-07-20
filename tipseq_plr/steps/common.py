@@ -58,17 +58,33 @@ class LiquidOps:
     async def _drop(self):
         if self.dry:
             return
-        await self.lh.drop_tips()  # to trash
+        await self.lh.discard_tips()
 
     async def _asp(self, resource, vol: float):
         if self.dry:
             return
-        await self.lh.aspirate(resource, vols=[vol] * 8)
+        await self.lh.aspirate(self._eight_channels(resource), vols=[vol] * 8)
 
     async def _disp(self, resource, vol: float):
         if self.dry:
             return
-        await self.lh.dispense(resource, vols=[vol] * 8)
+        await self.lh.dispense(self._eight_channels(resource), vols=[vol] * 8)
+
+    @staticmethod
+    def _eight_channels(resource):
+        """Map a shared source or a plate column to the STAR's eight channels.
+
+        PyLabRobot 0.2 validates the resource count against the active channel
+        count.  A plate-column slice is already a list of eight wells, whereas
+        a trough well is one shared source used by all eight channels.
+        """
+        if isinstance(resource, (list, tuple)):
+            if len(resource) == 1:
+                return [resource[0]] * 8
+            if len(resource) != 8:
+                raise ValueError(f"Expected one or eight channel resources, got {len(resource)}")
+            return resource
+        return [resource] * 8
 
     async def _mix(self, c: int, vol: float, cycles: int = 8):
         """Pipette up/down in place to resuspend beads / homogenize a reaction."""

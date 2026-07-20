@@ -5,6 +5,8 @@ import asyncio
 import pytest
 
 from tipseq_plr import Method, RunConfig, TipSeqProtocol
+from tipseq_plr.backends import InhecoODTCBackend
+from tipseq_plr.deck import build_deck
 from tipseq_plr.reagents import ReagentRegistry
 from tipseq_plr.steps.qc import _least_squares
 
@@ -45,6 +47,31 @@ def test_reagent_dead_volume_guard():
     reg.charge(C.WATER, 40.0)                 # ok: 60 left
     with pytest.raises(RuntimeError):
         reg.charge(C.WATER, 50.0)             # would leave 10 < 20 dead volume
+
+
+def test_reagent_source_uses_one_well_per_star_channel():
+    """A shared reagent must not model an 8 mm well as an eight-channel trough."""
+    from tipseq_plr import config as C
+
+    wells = ReagentRegistry.build().resource_for(build_deck(), C.WATER)
+    assert len(wells) == 8
+    assert len({well.name for well in wells}) == 8
+
+
+def test_odtc_accepts_a_standard_plr_protocol():
+    from pylabrobot.thermocycling.standard import Protocol, Stage, Step
+
+    async def go():
+        backend = InhecoODTCBackend(simulate=True)
+        await backend.setup()
+        await backend.run_protocol(
+            Protocol(stages=[Stage(steps=[Step(temperature=[55.0], hold_seconds=1)], repeats=2)]),
+            block_max_volume=50.0,
+        )
+        assert await backend.get_total_step_count() == 2
+        await backend.stop()
+
+    asyncio.run(go())
 
 
 def test_loadout_lists_reagents():

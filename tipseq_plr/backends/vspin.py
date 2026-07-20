@@ -68,22 +68,59 @@ class VSpinBackend(_BASE):
     async def close_door(self):
         await self._cmd("close_door")
 
+    async def lock_door(self):
+        await self._cmd("lock_door")
+
+    async def unlock_door(self):
+        await self._cmd("unlock_door")
+
+    async def lock_bucket(self):
+        await self._cmd("lock_bucket")
+
+    async def unlock_bucket(self):
+        await self._cmd("unlock_bucket")
+
+    async def go_to_bucket1(self):
+        await self._cmd("go_to_bucket1")
+
+    async def go_to_bucket2(self):
+        await self._cmd("go_to_bucket2")
+
     def declare_balanced(self, counterbalance: bool = True):
         """Operator/loader asserts a counterbalance plate is in place."""
         self._balanced = counterbalance
 
     # -- spin ----------------------------------------------------------------
-    async def spin(self, rcf_g: float, seconds: float, temperature_c: Optional[float] = None):
+    async def spin(
+        self,
+        g: float,
+        duration: float,
+        acceleration: Optional[float] = None,
+        *,
+        temperature_c: Optional[float] = None,
+    ):
+        """Spin at ``g`` for ``duration`` seconds.
+
+        The first three parameters match PyLabRobot's CentrifugeBackend
+        interface. ``temperature_c`` is a VSpin-specific planning annotation
+        retained for the simulated protocol path.
+        """
         if self.require_balance and not self.simulate and not self._balanced:
             raise RuntimeError(
                 "VSpin refused: buckets not declared balanced. Load a counterbalance "
                 "and call declare_balanced(), or set require_balance=False.")
         temp = "" if temperature_c is None else f" @ {temperature_c:.0f}C"
-        logger.info("VSpin: %.0f x g for %.0fs%s", rcf_g, seconds, temp)
+        logger.info("VSpin: %.0f x g for %.0fs%s", g, duration, temp)
         await self.close_door()
-        await self._cmd("spin", rcf_g=rcf_g, seconds=seconds, temperature_c=temperature_c)
+        await self._cmd(
+            "spin",
+            g=g,
+            duration=duration,
+            acceleration=acceleration,
+            temperature_c=temperature_c,
+        )
         if self.simulate and self.sim_time_scale > 0:
-            await asyncio.sleep(seconds * self.sim_time_scale)
+            await asyncio.sleep(duration * self.sim_time_scale)
         await self.open_door()
 
     # -- internals -----------------------------------------------------------

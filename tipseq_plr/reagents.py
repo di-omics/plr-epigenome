@@ -17,8 +17,8 @@ from dataclasses import dataclass, field
 from . import config as C
 
 
-# reagent -> (carrier, reservoir_index, column). Column 'A1'..'H1' style address
-# is resolved against the reservoir plate at access time.
+# reagent -> (carrier, reservoir_index, column). Each address resolves to a
+# full A--H reservoir column so the STAR's eight channels have one well each.
 _LAYOUT = {
     # buffers carrier (reservoir plate index, column letter, rows used)
     C.WASH_BUFFER:     ("buffers", 0, "1"),
@@ -97,17 +97,16 @@ class ReagentRegistry:
         return reg
 
     def resource_for(self, deckmap, name: str):
-        """Return the PLR well resource for a reagent, e.g. reservoir['A1'].
+        """Return the eight PLR wells used by the STAR for a reagent.
 
-        The column letter in the layout indexes a *column* of the reservoir
-        plate; row A of that column is used as the pickup well. For high-throughput
-        buffer dispensing across a 96-well plate you would use the whole column;
-        here we keep it simple and draw from row A.
+        The layout indexes a column in an addressable reservoir plate.  Returning
+        all eight wells in that column gives every liquid-handling channel its own
+        source well, rather than treating an 8 mm well as an eight-channel trough.
         """
         r = self.reagents[name]
         carrier = deckmap.reagent_troughs if r.carrier == "buffers" else deckmap.enzyme_troughs
         reservoir = carrier[r.reservoir_index]
-        return reservoir[f"A{r.column}"]
+        return reservoir[f"A{r.column}:H{r.column}"]
 
     def declare_loaded(self, name: str, volume_ul: float):
         """Operator preflight: state how much of a reagent is physically in the

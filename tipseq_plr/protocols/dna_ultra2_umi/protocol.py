@@ -83,7 +83,9 @@ class Ultra2DnaUmi:
                                    new_tips_each_column=True)
         # ligation master mix is very viscous: mix thoroughly or ligation efficiency drops
         for c in range(self.ops.ncols):
+            await self.ops._pick(c)
             await self.ops._mix(c, min(self.ops.well_volume_ul[c] * 0.6, 80.0), cycles=lg.mix_cycles)
+            await self.ops._drop()
         await thermal.incubate_tc(
             self.ops, [ProfileStep(lg.incubation_c, lg.incubation_s, "ligation-20C")],
             lid_celsius=0.0 if lg.lid_off else 105.0, block_max_volume=lg.total_ul)

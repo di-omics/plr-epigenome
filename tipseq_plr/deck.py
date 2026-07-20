@@ -11,10 +11,10 @@ which catalog parts a physical run must swap in.
 Rail map (STAR has 55 T-tracks). Adjust to your instrument footprint:
 
     rail  3  : tip carrier   - 300 uL filtered tips (aspiration)
-    rail  8  : tip carrier   - 50 uL filtered tips (low-volume reagents)
-    rail 13  : reagent carrier (troughs: wash, dig buffers, SPRI, EtOH, water)
-    rail 18  : reagent carrier (enzymes / mixes, cold - see ChilledCarrier)
-    rail 24  : sample plate carrier (working plate + index plates)
+    rail  9  : tip carrier   - 50 uL filtered tips (low-volume reagents)
+    rail 15  : reagent carrier (troughs: wash, dig buffers, SPRI, EtOH, water)
+    rail 21  : reagent carrier (enzymes / mixes, cold - see ChilledCarrier)
+    rail 27  : sample plate carrier (working plate + index plates)
     rail 30  : MAGNET position (passive Alpaqua/Ambion magnet plate)
     rail 36  : Hamilton Heater Shaker (HHS) nest
     rail 42  : Inheco ODTC docking footprint
@@ -53,8 +53,8 @@ class DeckMap:
     deck: object
     tips_300: object
     tips_50: object
-    reagent_troughs: object          # reagent carrier 1 (buffers)
-    enzyme_troughs: object           # reagent carrier 2 (chilled enzymes)
+    reagent_troughs: object          # plates on reagent carrier 1 (buffers)
+    enzyme_troughs: object           # plates on reagent carrier 2 (chilled enzymes)
     working_plate: object            # the 96-well sample plate that travels the deck
     index_plate: object              # PCR index primer source plate
     magnet_site: Optional[object]    # coordinate/resource for the magnet nest
@@ -79,15 +79,22 @@ def _make_tip_carrier(rail: int, name: str, tip_kind: str):
     """300 uL or 50 uL filtered tips on a standard Hamilton tip carrier."""
     from pylabrobot.resources.hamilton import TIP_CAR_480_A00
     from pylabrobot.resources import (
-        HTF,  # 300 uL filtered (Hamilton), newer catalog name
+        hamilton_96_tiprack_1000uL_filter,
+        hamilton_96_tiprack_50uL_filter,
     )
 
     car = TIP_CAR_480_A00(name=f"{name}_carrier")
+    # HTF was removed in PyLabRobot 0.2.1 in favour of the explicit catalog
+    # factory below. Select the rack by the intended pipetting range; the
+    # carrier geometry is the same for both sizes.
+    rack_factory = (
+        hamilton_96_tiprack_50uL_filter
+        if tip_kind == "50"
+        else hamilton_96_tiprack_1000uL_filter
+    )
     # Fill positions 0..4 with tip racks of the requested kind.
     for i in range(5):
-        rack = _try(
-            lambda i=i: HTF(name=f"{name}_{i}"),
-        )
+        rack = rack_factory(name=f"{name}_{i}")
         car[i] = rack
     return car
 
@@ -99,22 +106,39 @@ def _make_reagent_carrier(name: str):
     addressable column; `reagents.py` maps buffer -> column.
     """
     from pylabrobot.resources.hamilton import PLT_CAR_L5AC_A00
-    from pylabrobot.resources import Cos_96_wellplate_2mL_Uwell
+    from pylabrobot.resources import Cor_96_wellplate_2mL_Vb
 
     car = PLT_CAR_L5AC_A00(name=f"{name}_carrier")
     for i in range(5):
-        car[i] = _try(lambda i=i: Cos_96_wellplate_2mL_Uwell(name=f"{name}_res_{i}"))
+        car[i] = Cor_96_wellplate_2mL_Vb(name=f"{name}_res_{i}")
     return car
 
 
 def _make_plate_carrier(name: str):
     from pylabrobot.resources.hamilton import PLT_CAR_L5AC_A00
-    from pylabrobot.resources import Cos_96_wellplate_2mL_Uwell
+    from pylabrobot.resources import Cor_96_wellplate_2mL_Vb
 
     car = PLT_CAR_L5AC_A00(name=f"{name}_carrier")
     for i in range(5):
-        car[i] = _try(lambda i=i: Cos_96_wellplate_2mL_Uwell(name=f"{name}_plate_{i}"))
+        car[i] = Cor_96_wellplate_2mL_Vb(name=f"{name}_plate_{i}")
     return car
+
+
+def _loaded_plates(carrier):
+    """Return plates, not carrier slots, across PyLabRobot carrier APIs."""
+    plates = []
+    for index in range(5):
+        slot = carrier[index]
+        children = getattr(slot, "children", ())
+        plates.append(children[0] if children else slot)
+    return plates
+
+
+def _loaded_tip_rack(carrier, index: int = 0):
+    """Return a tip rack, not its ResourceHolder, across PLR carrier APIs."""
+    slot = carrier[index]
+    children = getattr(slot, "children", ())
+    return children[0] if children else slot
 
 
 def build_deck(num_samples: int = 96) -> DeckMap:
@@ -138,16 +162,20 @@ def build_deck(num_samples: int = 96) -> DeckMap:
     deck = STARLetDeck()
 
     tip_car_300 = _make_tip_carrier(3, "tips300", "300")
-    tip_car_50 = _make_tip_carrier(8, "tips50", "50")
+    tip_car_50 = _make_tip_carrier(9, "tips50", "50")
     reagent_car = _make_reagent_carrier("buffers")
     enzyme_car = _make_reagent_carrier("enzymes")
     plate_car = _make_plate_carrier("samples")
 
     deck.assign_child_resource(tip_car_300, rails=3)
-    deck.assign_child_resource(tip_car_50, rails=8)
-    deck.assign_child_resource(reagent_car, rails=13)
-    deck.assign_child_resource(enzyme_car, rails=18)
-    deck.assign_child_resource(plate_car, rails=24)
+    # These 5-position carriers occupy six STAR rails each. Keep one carrier
+    # boundary between starts so the PyLabRobot deck model can reject real
+    # overlaps rather than letting simulation silently accept an impossible map.
+    deck.assign_child_resource(tip_car_50, rails=9)
+    deck.assign_child_resource(reagent_car, rails=15)
+    deck.assign_child_resource(enzyme_car, rails=21)
+    deck.assign_child_resource(plate_car, rails=27)
+    sample_plates = _loaded_plates(plate_car)
 
     # Magnet / HHS / ODTC / reader are represented as reserved deck coordinates.
     # Their physical modules are driven by their own backends (devices.py); the
@@ -159,17 +187,20 @@ def build_deck(num_samples: int = 96) -> DeckMap:
 
     return DeckMap(
         deck=deck,
-        tips_300=tip_car_300[0],
-        tips_50=tip_car_50[0],
-        reagent_troughs=reagent_car,
-        enzyme_troughs=enzyme_car,
-        working_plate=plate_car[0],
-        index_plate=plate_car[1],
+        tips_300=_loaded_tip_rack(tip_car_300),
+        tips_50=_loaded_tip_rack(tip_car_50),
+        # PLR 0.2 exposes a PlateHolder from carrier[index], whereas the
+        # protocol layer needs the plate to resolve wells. Publish the loaded
+        # plates so reagent and protocol code is insulated from that detail.
+        reagent_troughs=_loaded_plates(reagent_car),
+        enzyme_troughs=_loaded_plates(enzyme_car),
+        working_plate=sample_plates[0],
+        index_plate=sample_plates[1],
         magnet_site=magnet_site,
         hhs_site=hhs_site,
         odtc_site=odtc_site,
         reader_staging=reader_staging,
-        qc_plate=plate_car[2],
+        qc_plate=sample_plates[2],
     )
 
 

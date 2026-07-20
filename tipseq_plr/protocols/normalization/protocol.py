@@ -54,13 +54,24 @@ class _NormOps:
     def _col(self, c: int) -> str:
         return f"A{c + 1}:H{c + 1}"
 
+    @staticmethod
+    def _eight_channels(resource):
+        """Expand a shared reagent well across the STAR's eight channels."""
+        if isinstance(resource, (list, tuple)):
+            if len(resource) == 1:
+                return [resource[0]] * 8
+            if len(resource) != 8:
+                raise ValueError(f"Expected one or eight channel resources, got {len(resource)}")
+            return resource
+        return [resource] * 8
+
     async def _pick(self, rack, c):
         if not self.dry:
             await self.lh.pick_up_tips(rack[self._col(c)])
 
     async def _drop(self):
         if not self.dry:
-            await self.lh.drop_tips()
+            await self.lh.discard_tips()
 
     async def dispense_working_solution(self):
         """WS into every assay well (same volume), one tip column reused."""
@@ -73,7 +84,7 @@ class _NormOps:
         src = self.reg.resource_for(self.dm, C.QUBIT_HS_WS)
         await self._pick(self.dm.tips_300, 0)
         for c in range(self.ncols):
-            await self.lh.aspirate(src, vols=[vol] * 8)
+            await self.lh.aspirate(self._eight_channels(src), vols=[vol] * 8)
             await self.lh.dispense(self.dm.qc_plate[self._col(c)], vols=[vol] * 8)
         await self._drop()
 
@@ -100,7 +111,9 @@ class _NormOps:
         for c in range(self.ncols):
             vols = water_by_col[c]
             self.reg.charge(C.WATER, sum(vols))
-            await self.lh.aspirate(src, vols=[max(v, 0.0) for v in vols])
+            await self.lh.aspirate(
+                self._eight_channels(src), vols=[max(v, 0.0) for v in vols]
+            )
             await self.lh.dispense(self.dm.index_plate[self._col(c)], vols=[max(v, 0.0) for v in vols])
         await self._drop()
 

@@ -65,18 +65,30 @@ class _HyDropOps:
     def _col(self, c):
         return f"A{c + 1}:H{c + 1}"
 
+    @staticmethod
+    def _eight_channels(resource):
+        """Expand a shared reagent well across the STAR's eight channels."""
+        if isinstance(resource, (list, tuple)):
+            if len(resource) == 1:
+                return [resource[0]] * 8
+            if len(resource) != 8:
+                raise ValueError(f"Expected one or eight channel resources, got {len(resource)}")
+            return resource
+        return [resource] * 8
+
     async def add(self, reagent: str, vol: float, *, new_tips=True):
         logger.info("add %-28s %6.1f uL x %d col", reagent, vol, self.ncols)
         if self.dry:
             return
         # Reagents are drawn from the shared reagent carrier reservoirs; for a
         # real run map each HyDrop reagent to a reservoir column here.
-        src = self.dm.reagent_troughs[0]["A1"]
+        # Use a full reservoir column: one source well per STAR channel.
+        src = self.dm.reagent_troughs[0]["A1:H1"]
         for c in range(self.ncols):
             await self.lh.pick_up_tips(self.dm.tips_50[self._col(c)])
-            await self.lh.aspirate(src, vols=[vol] * 8)
+            await self.lh.aspirate(self._eight_channels(src), vols=[vol] * 8)
             await self.lh.dispense(self.dm.working_plate[self._col(c)], vols=[vol] * 8)
-            await self.lh.drop_tips()
+            await self.lh.discard_tips()
 
     async def remove_supernatant(self, vol: float):
         logger.info("remove supernatant %.1f uL", vol)
@@ -85,7 +97,7 @@ class _HyDropOps:
         for c in range(self.ncols):
             await self.lh.pick_up_tips(self.dm.tips_50[self._col(c)])
             await self.lh.aspirate(self.dm.working_plate[self._col(c)], vols=[max(vol - 2, 0)] * 8)
-            await self.lh.drop_tips()
+            await self.lh.discard_tips()
 
     async def bead_cleanup(self, bead_reagent: str, *, add_beads_ul: float,
                            elution_reagent: str, elution_ul: float, washes: int = 2,

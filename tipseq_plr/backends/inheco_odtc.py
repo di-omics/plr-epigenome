@@ -22,15 +22,18 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Sequence, Union
 
 logger = logging.getLogger("tipseq.odtc")
 
 try:
     from pylabrobot.thermocycling.backend import ThermocyclerBackend  # type: ignore
+    from pylabrobot.thermocycling.standard import BlockStatus, LidStatus, Protocol
 
     _BASE = ThermocyclerBackend
 except Exception:  # pragma: no cover - PLR layout varies by version
+    BlockStatus = LidStatus = Protocol = object  # type: ignore
+
     class _BASE:  # minimal stand-in so the class is instantiable everywhere
         pass
 
@@ -66,6 +69,21 @@ class InhecoODTCBackend(_BASE):
         self._block_c: Optional[float] = None
         self._lid_c: Optional[float] = None
         self._lid_open = False
+        self._profile_running = False
+        self._current_step_index = 0
+        self._total_step_count = 0
+        self._current_cycle_index = 0
+        self._total_cycle_count = 0
+        self._hold_seconds = 0.0
+
+    @staticmethod
+    def _celsius(value: Union[float, Sequence[float]]) -> float:
+        """Accept PLR's one-zone list form and this backend's scalar shorthand."""
+        if isinstance(value, (int, float)):
+            return float(value)
+        if not value:
+            raise ValueError("ODTC needs at least one temperature zone.")
+        return float(value[0])
 
     # -- lifecycle -----------------------------------------------------------
     async def setup(self):
@@ -97,18 +115,18 @@ class InhecoODTCBackend(_BASE):
         self._lid_open = False
         await self._cmd("CloseLid")
 
-    async def set_lid_temperature(self, celsius: float):
-        self._lid_c = celsius
-        await self._cmd("SetLidTemperature", celsius)
+    async def set_lid_temperature(self, temperature: Union[float, Sequence[float]]):
+        self._lid_c = self._celsius(temperature)
+        await self._cmd("SetLidTemperature", self._lid_c)
 
     async def deactivate_lid(self):
         self._lid_c = None
         await self._cmd("DeactivateLid")
 
     # -- block ---------------------------------------------------------------
-    async def set_block_temperature(self, celsius: float):
-        self._block_c = celsius
-        await self._cmd("SetBlockTemperature", celsius)
+    async def set_block_temperature(self, temperature: Union[float, Sequence[float]]):
+        self._block_c = self._celsius(temperature)
+        await self._cmd("SetBlockTemperature", self._block_c)
 
     async def get_block_temperature(self) -> float:
         if self.simulate:
@@ -117,7 +135,52 @@ class InhecoODTCBackend(_BASE):
 
     async def deactivate_block(self):
         self._block_c = None
+        self._profile_running = False
         await self._cmd("DeactivateBlock")
+
+    # -- PyLabRobot ThermocyclerBackend state -------------------------------
+    # These methods keep the custom ODTC adapter compatible with the current
+    # abstract PLR interface while retaining the simpler scalar helpers above.
+
+    async def get_block_current_temperature(self) -> List[float]:
+        return [await self.get_block_temperature()]
+
+    async def get_block_target_temperature(self) -> List[float]:
+        if self._block_c is None:
+            raise RuntimeError("Block target temperature is not set.")
+        return [self._block_c]
+
+    async def get_lid_current_temperature(self) -> List[float]:
+        return [self._lid_c if self._lid_c is not None else 25.0]
+
+    async def get_lid_target_temperature(self) -> List[float]:
+        if self._lid_c is None:
+            raise RuntimeError("Lid target temperature is not set.")
+        return [self._lid_c]
+
+    async def get_lid_open(self) -> bool:
+        return self._lid_open
+
+    async def get_lid_status(self) -> LidStatus:
+        return LidStatus.HOLDING_AT_TARGET if self._lid_c is not None else LidStatus.IDLE
+
+    async def get_block_status(self) -> BlockStatus:
+        return BlockStatus.HOLDING_AT_TARGET if self._block_c is not None else BlockStatus.IDLE
+
+    async def get_hold_time(self) -> float:
+        return self._hold_seconds if self._profile_running else 0.0
+
+    async def get_current_cycle_index(self) -> int:
+        return self._current_cycle_index
+
+    async def get_total_cycle_count(self) -> int:
+        return self._total_cycle_count
+
+    async def get_current_step_index(self) -> int:
+        return self._current_step_index
+
+    async def get_total_step_count(self) -> int:
+        return self._total_step_count
 
     # -- programs ------------------------------------------------------------
     async def run_profile(
@@ -128,12 +191,36 @@ class InhecoODTCBackend(_BASE):
     ):
         """Execute an ordered list of holds. This is the primitive the higher
         level PCR/RT/gap-fill helpers compile down to."""
+        self._profile_running = True
+        self._total_step_count = len(steps)
+        self._current_step_index = 0
+        self._total_cycle_count = 1
+        self._current_cycle_index = 1
         await self.set_lid_temperature(lid_celsius)
         await self.close_lid()
         for s in steps:
+            self._current_step_index += 1
+            self._hold_seconds = s.seconds
             await self.set_block_temperature(s.celsius)
             await self._hold(s.celsius, s.seconds, s.name)
+        self._profile_running = False
+        self._hold_seconds = 0.0
         logger.info("ODTC profile complete (%d steps)", len(steps))
+
+    async def run_protocol(self, protocol: Protocol, block_max_volume: float):
+        """Run a standard PyLabRobot protocol through the ODTC adapter."""
+        steps: List[ProfileStep] = []
+        for stage_index, stage in enumerate(protocol.stages, start=1):
+            for repeat in range(stage.repeats):
+                for step_index, step in enumerate(stage.steps, start=1):
+                    steps.append(
+                        ProfileStep(
+                            celsius=self._celsius(step.temperature),
+                            seconds=float(step.hold_seconds),
+                            name=f"stage {stage_index}, repeat {repeat + 1}, step {step_index}",
+                        )
+                    )
+        await self.run_profile(steps, block_max_volume)
 
     async def run_pcr(
         self,
