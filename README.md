@@ -20,7 +20,7 @@ Turns the published protocol:
 > *High-throughput single-cell epigenomic profiling by targeted insertion of promoters (TIP-seq).*
 > **J Cell Biol** 220(12):e202103078. https://doi.org/10.1083/jcb.202103078
 
-into an end-to-end, deck-resident method that a robot runs unattended, from bead-bound cells through a sequence-ready, QC'd library plate.
+into an end-to-end, deck-resident method that runs in simulation today, from bead-bound cells through a sequence-ready, QC'd library plate.
 
 Instruments driven:
 
