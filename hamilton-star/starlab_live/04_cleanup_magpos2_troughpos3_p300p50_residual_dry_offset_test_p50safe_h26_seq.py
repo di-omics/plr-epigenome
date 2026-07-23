@@ -14,7 +14,7 @@ from pylabrobot.resources import (
 )
 import pylabrobot.resources as plr_resources
 
-# whole-genome sequencing Bio Validation 0
+# WGS preparation Bio Validation 0
 # 04 dry bead-clean / ethanol-wash offset test
 # EMERGENCY SAFETY PATCH H30:
 # - p50 residual ethanol removal still crushed at height 12.0 on mag pos2.
@@ -45,7 +45,7 @@ import pylabrobot.resources as plr_resources
 #   rail35 pos3 = 12-well reservoir/trough
 #
 # Reservoir map:
-#   A1 = Resolve beads / bead mimic
+#   A1 = SPRI cleanup beads / bead mimic
 #   A2 = ethanol wash 1 / ethanol mimic
 #   A3 = ethanol wash 2 / ethanol mimic
 #   A4 = elution buffer / elution mimic
@@ -147,7 +147,7 @@ class CleanupAction:
 ACTIONS = {
     "beads-add-dry": CleanupAction(
         mode="beads-add-dry",
-        label="Add Resolve beads / bead mimic",
+        label="Add SPRI cleanup beads / bead mimic",
         kind="add",
         source_well=TROUGH_BEADS,
         volume_ul=VOL_BEADS,

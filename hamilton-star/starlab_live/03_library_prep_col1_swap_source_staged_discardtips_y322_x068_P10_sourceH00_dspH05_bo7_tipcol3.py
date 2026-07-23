@@ -9,7 +9,7 @@ from pylabrobot.resources.hamilton import STARDeck, TIP_CAR_480_A00
 from pylabrobot.resources import PLT_CAR_L5AC_A00, CellTreat_96_wellplate_350ul_Fb, Coordinate
 import pylabrobot.resources as plr_resources
 
-# whole-genome sequencing Bio Validation 0
+# WGS preparation Bio Validation 0
 # P10 WATER-RETENTION TEST PATCH V2:
 # - Previous source height -0.5 was rejected by the STAR backend as below minimum well height.
 # - Source aspiration height is now 0.0, the lowest legal bottom height.

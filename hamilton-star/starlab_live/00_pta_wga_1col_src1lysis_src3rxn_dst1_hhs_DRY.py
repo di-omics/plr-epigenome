@@ -13,7 +13,7 @@ except ImportError:
     from pylabrobot.resources import Coordinate
 import pylabrobot.resources as plr_resources
 
-# whole-genome sequencing Bio Validation 0 - whole-genome sequencing beginning
+# WGS preparation Bio Validation 0 - PTA/WGA beginning
 #
 # SINGLE-COLUMN 1-COL VARIANT 2026-07-09 (derived from
 # 00_pta_wga_96wp_demo_all12_DSPH15_DRY_ISWAP_R27P2_HHS.py):

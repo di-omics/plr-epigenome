@@ -14,7 +14,7 @@ from pylabrobot.resources import (
 import pylabrobot.resources as plr_resources
 
 # -----------------------------------------------------------------------------
-# whole-genome sequencing - p300 ethanol wash add/remove focused test
+# WGS preparation (PTA) - p300 ethanol wash add/remove focused test
 # Hamilton STAR + PyLabRobot on starpi
 #
 # Purpose:
@@ -24,7 +24,7 @@ import pylabrobot.resources as plr_resources
 # - Excludes p10/p50 source-to-work, p1000, iSWAP, and full protocol logic.
 #
 # Protocol context:
-# - whole-genome sequencing cleanup calls for adding 200 uL 80% ethanol to each well on magnet,
+# - WGS preparation cleanup calls for adding 200 uL 80% ethanol to each well on magnet,
 #   incubating 30 seconds, then carefully removing ethanol without disturbing beads.
 # - This file starts with bead-safe/high removal geometry for observation.
 #
@@ -54,7 +54,7 @@ TROUGH_POS = 3
 DEST_COLUMNS = [1]
 
 # Trough source/waste wells in 12-well reservoir.
-# A2/A3 map to ethanol 1/2 in prior whole-genome sequencing scaffold. A12 is waste/sink for test removals.
+# A2/A3 map to ethanol 1/2 in prior WGS preparation scaffold. A12 is waste/sink for test removals.
 TROUGH_ETOH1 = "A2"
 TROUGH_ETOH2 = "A3"
 TROUGH_WATER_TEST = "A5"

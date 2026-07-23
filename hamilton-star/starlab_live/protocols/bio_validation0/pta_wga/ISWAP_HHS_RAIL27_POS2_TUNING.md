@@ -56,7 +56,7 @@ python protocols/bio_validation0/pta_wga/test_iswap_plate_rail27pos2_hhs_to_rail
 
 ## Full dry choreography
 
-`protocols/bio_validation0/full_end_to_end/run_pta_hhs_iswap_then_ampseq_dry_return_tips.py`
+`protocols/bio_validation0/full_end_to_end/run_pta_hhs_iswap_then_targeted_pcr_dry_return_tips.py`
 runs the forward move, then the return move, then the targeted PCR full built dry
-choreography (`09_ampseq_full_built_end_to_end_dry.py`). It refuses to run
-without `--confirm RUN_FULL_PTA_AMPSEQ_DRY_RETURN_TIPS`.
+choreography (`09_targeted_pcr_full_built_end_to_end_dry.py`). It refuses to run
+without `--confirm RUN_FULL_PTA_TARGETED_PCR_DRY_RETURN_TIPS`.

@@ -9,7 +9,7 @@ from pylabrobot.resources.hamilton import STARDeck, TIP_CAR_480_A00
 from pylabrobot.resources import PLT_CAR_L5AC_A00, CellTreat_96_wellplate_350ul_Fb, Coordinate
 import pylabrobot.resources as plr_resources
 
-# whole-genome sequencing Bio Validation 0
+# WGS preparation Bio Validation 0
 # Y-LOWER OBSERVATION PATCH:
 # - Source/work XY offset Y nudged lower from 3.35 to 3.20 for rail35 pos1 -> pos0 library-prep transfers.
 # - X, Z/height, blowout, volumes, and tip behavior are unchanged.

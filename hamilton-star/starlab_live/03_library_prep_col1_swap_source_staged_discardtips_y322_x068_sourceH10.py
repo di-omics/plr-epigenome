@@ -9,7 +9,7 @@ from pylabrobot.resources.hamilton import STARDeck, TIP_CAR_480_A00
 from pylabrobot.resources import PLT_CAR_L5AC_A00, CellTreat_96_wellplate_350ul_Fb, Coordinate
 import pylabrobot.resources as plr_resources
 
-# whole-genome sequencing Bio Validation 0
+# WGS preparation Bio Validation 0
 # SOURCE-LOW P10 PATCH V2:
 # - H=1.5 picked up better and did not crush, but still looked slightly high/partial.
 # - Source aspiration height lowered one more cautious step to 1.0 for p10 and p50 constants.

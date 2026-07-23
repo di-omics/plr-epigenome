@@ -9,7 +9,7 @@ from pylabrobot.resources.hamilton import STARDeck, TIP_CAR_480_A00
 from pylabrobot.resources import PLT_CAR_L5AC_A00, CellTreat_96_wellplate_350ul_Fb, Coordinate
 import pylabrobot.resources as plr_resources
 
-# whole-genome sequencing Bio Validation 0
+# WGS preparation Bio Validation 0
 # Y/X-SAFE DISPENSE PATCH V4:
 # - y=3.25 was valid and better, but still visually a bit high/back.
 # - Destination/work dispense now uses Coordinate(-0.68, 3.23, 0.0).

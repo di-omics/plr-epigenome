@@ -9,7 +9,7 @@ from pylabrobot.resources.hamilton import STARDeck, TIP_CAR_480_A00
 from pylabrobot.resources import PLT_CAR_L5AC_A00, CellTreat_96_wellplate_350ul_Fb, Coordinate
 import pylabrobot.resources as plr_resources
 
-# whole-genome sequencing Bio Validation 0
+# WGS preparation Bio Validation 0
 # P50-ALL FALLBACK PATCH:
 # - All source-to-work library-prep additions use p50 tips from rail48 pos1.
 # - p50 tip columns advance by mode: dnaprep=1, ferat=2, adapter=3, lp2l=4, libamp=5.

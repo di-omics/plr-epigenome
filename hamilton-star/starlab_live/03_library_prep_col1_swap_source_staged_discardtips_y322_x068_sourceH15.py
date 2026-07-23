@@ -9,7 +9,7 @@ from pylabrobot.resources.hamilton import STARDeck, TIP_CAR_480_A00
 from pylabrobot.resources import PLT_CAR_L5AC_A00, CellTreat_96_wellplate_350ul_Fb, Coordinate
 import pylabrobot.resources as plr_resources
 
-# whole-genome sequencing Bio Validation 0
+# WGS preparation Bio Validation 0
 # SOURCE-LOW P10 PATCH:
 # - Keep original best tip plan: p10 for 3/4/5/5 uL, p50 for 20 uL LIBAMP.
 # - Empty/under-pickup likely came from source aspiration height being too high.

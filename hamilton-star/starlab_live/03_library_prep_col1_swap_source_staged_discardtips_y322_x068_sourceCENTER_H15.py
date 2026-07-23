@@ -9,7 +9,7 @@ from pylabrobot.resources.hamilton import STARDeck, TIP_CAR_480_A00
 from pylabrobot.resources import PLT_CAR_L5AC_A00, CellTreat_96_wellplate_350ul_Fb, Coordinate
 import pylabrobot.resources as plr_resources
 
-# whole-genome sequencing Bio Validation 0
+# WGS preparation Bio Validation 0
 # SOURCE-CENTER ASPIRATION PATCH:
 # - H=1.5 partially worked; H=1.0 came empty, suggesting the source pickup may be off-center/against wall or sealing.
 # - Source aspiration now uses centered XY Coordinate(0.0, 0.0, 0.0) at height 1.5.

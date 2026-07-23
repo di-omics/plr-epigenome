@@ -5,11 +5,11 @@ Protocols and validation scripts for the Preventive Medicine Hamilton Microlab S
 ## Repository layout
 
 - `setup/` - STARPI setup, SSH, USB, and safe startup notes.
-- `protocols/resolve_dna/` - earlier whole-genome sequencing protocol scripts.
-- `protocols/bio_validation0/pta_wga/` - current Bio Validation 0 whole-genome sequencing runners.
-- `protocols/bio_validation0/ampseq/` - current Bio Validation 0 targeted PCR scripts.
+- `protocols/whole_genome_seq/` - earlier WGS preparation protocol scripts.
+- `protocols/bio_validation0/pta_wga/` - current Bio Validation 0 PTA/WGA runners.
+- `protocols/bio_validation0/targeted_pcr/` - current Bio Validation 0 targeted PCR library preparation scripts.
 - `tests/liquid_handling/` - generic STAR liquid-handling validation scripts.
-- `tests/resolve_dna/` - whole-genome sequencing-specific focused tests.
+- `tests/whole_genome_seq/` - WGS-preparation focused tests.
 - `tests/movement/` - movement, lid, and iSWAP tests.
 - `archive/` - preserved debugging checkpoints.
 
@@ -41,24 +41,24 @@ rail35 pos3 = trough/reservoir
   - Does not use `--return-tips`.
   - Requires typed confirmations before real lysis and reaction additions.
 
-## Current targeted PCR entrypoints
+## Current targeted PCR library preparation entrypoints
 
-- `protocols/bio_validation0/ampseq/01_ampseq_pcr1_mastermix_col1.py`
+- `protocols/bio_validation0/targeted_pcr/01_targeted_pcr_round1_mastermix_col1.py`
   - Validated dry.
   - p50 transfer: 22.5 uL x8 complete PCR1 master mix.
   - Source rail35 pos1 col1 -> destination rail35 pos0 col1.
 
-- `protocols/bio_validation0/ampseq/03_ampseq_pcr2_mastermix_col1.py`
+- `protocols/bio_validation0/targeted_pcr/03_targeted_pcr_round2_mastermix_col1.py`
   - Validated dry.
   - p50 transfer: 20.5 uL x8 common PCR2 master mix.
   - Source rail35 pos1 col1 -> destination rail35 pos0 col1.
 
-- `protocols/bio_validation0/ampseq/02_ampseq_pcr1_cleanup_col1_dry_v2_p50low.py`
+- `protocols/bio_validation0/targeted_pcr/02_targeted_pcr_round1_cleanup_col1_dry_v2_p50low.py`
   - Validated first dry p50-low cleanup motion.
   - Intended next work: mock-liquid bead clean validation.
 
 ## Current priorities
 
-1. Hamilton bead clean for targeted PCR.
-2. Embryo sample biovalidation: whole-genome amplification, Viaflow/manual vs Hamilton.
-3. Embryo sample biovalidation: targeted PCR, Viaflow/manual vs Hamilton.
+1. Hamilton bead clean for targeted PCR library preparation.
+2. Embryo sample biovalidation: PTA, Viaflow/manual vs Hamilton.
+3. Embryo sample biovalidation: targeted PCR library preparation, Viaflow/manual vs Hamilton.

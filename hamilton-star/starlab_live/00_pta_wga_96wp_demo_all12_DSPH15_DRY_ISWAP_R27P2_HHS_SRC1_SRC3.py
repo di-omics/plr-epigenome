@@ -13,9 +13,9 @@ except ImportError:
     from pylabrobot.resources import Coordinate
 import pylabrobot.resources as plr_resources
 
-# whole-genome sequencing Bio Validation 0 - whole-genome sequencing beginning
-# whole-genome sequencing SOURCE-TO-WORK LOCK 2026-05-12:
-# - Modes are lysis and reaction for the beginning whole-genome sequencing workflow.
+# WGS preparation Bio Validation 0 - PTA/WGA beginning
+# PTA/WGA SOURCE-TO-WORK LOCK 2026-05-12:
+# - Modes are lysis and reaction for the beginning PTA/WGA workflow.
 # - lysis adds 3.0 uL Lysis Mix using p10 tip column 1.
 # - reaction adds 6.0 uL Reaction Mix using p10 tip column 2.
 # - Source is rail35 pos1 column 1 for each mode; manually swap source reagent between modes.

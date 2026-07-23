@@ -14,7 +14,7 @@ from pylabrobot.resources import (
 import pylabrobot.resources as plr_resources
 
 # -----------------------------------------------------------------------------
-# whole-genome sequencing - p300 bead-clean add/remove + rail35 iSWAP focused test
+# WGS preparation (PTA) - p300 bead-clean add/remove + rail35 iSWAP focused test
 #
 # Active deck:
 # - Rail 48 pos2 = p300 filter conductive tips.

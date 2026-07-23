@@ -14,7 +14,7 @@ from pylabrobot.resources import (
 import pylabrobot.resources as plr_resources
 
 # -----------------------------------------------------------------------------
-# whole-genome sequencing - p10 + p50 source-to-work RHODAMINE / LH geometry script
+# WGS preparation (PTA) - p10 + p50 source-to-work RHODAMINE / LH geometry script
 # Hamilton STAR + PyLabRobot on starpi
 #
 # Purpose:
@@ -79,7 +79,7 @@ P50_BLOWOUT_AIR_VOLUME = 2.0
 MIX_REPETITIONS = 0
 MIX_FLOW_RATE = 80
 
-# whole-genome sequencing source 96DW layout.
+# WGS preparation source 96DW layout.
 SRC_LYSIS_COL = 1
 SRC_REACTION_COL = 2
 SRC_DNAPREP_COL = 3

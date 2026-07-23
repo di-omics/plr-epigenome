@@ -130,7 +130,7 @@ async def main():
                 trough[TROUGH_BEADS][0],
                 targets,
                 VOL_BEADS,
-                f"{TROUGH_BEADS} (Resolve Beads)",
+                f"{TROUGH_BEADS} (SPRI cleanup beads)",
                 do_mix=False,
             )
 

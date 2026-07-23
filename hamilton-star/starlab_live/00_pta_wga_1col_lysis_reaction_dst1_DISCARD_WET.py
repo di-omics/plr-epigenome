@@ -13,14 +13,14 @@ except ImportError:
     from pylabrobot.resources import Coordinate
 import pylabrobot.resources as plr_resources
 
-# whole-genome sequencing Bio Validation 0 - whole-genome sequencing beginning
+# WGS preparation Bio Validation 0 - PTA/WGA beginning
 #
 # WET SINGLE-ADDITION DISCARD-TIPS VARIANT 2026-07-09 (derived from the validated dry variant
 # 00_pta_wga_1col_src1lysis_src3rxn_dst1_hhs_DRY.py):
 # - REAL reagents. Does ONE reagent addition into ONE destination column, then STOPS.
 # - DISCARD tips always; --return-tips is rejected (single-cell whole-genome amplification carryover is fatal).
 # - Modes: lysis (3.0 uL) and reaction (6.0 uL), run as SEPARATE processes.
-#   Biology order (the kit user guide): add lysis -> operator seal/spin -> HHS 20 min at 1400 rpm RT ->
+#   Biology order (authorized WGS/WGA workflow source): add lysis -> operator seal/spin -> HHS 20 min at 1400 rpm RT ->
 #   spin/ice -> add reaction -> operator seal/spin -> HHS 1 min at 1000 rpm -> spin/ice ->
 #   30 C DNA Amplification thermocycler. Seal/spin/incubation/thermocycler are MANUAL operator steps.
 # - No iSWAP here: the operator seals and moves the plate for incubation.

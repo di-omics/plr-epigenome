@@ -13,7 +13,7 @@ from pylabrobot.resources import (
 import pylabrobot.resources as plr_resources
 
 # -----------------------------------------------------------------------------
-# P10 ONLY refine script - whole-genome sequencing new deck
+# P10 ONLY refine script - WGS preparation new deck
 #
 # Purpose:
 # - Isolate the FIRST p10 source 96DW -> work 96WP movement set.
@@ -54,7 +54,7 @@ P10_WORK_DSP_OFFSETS = [Coordinate(-0.15, 3.35, 0.0)] * 8
 
 P10_BLOWOUT_AIR_VOLUME = 0.8
 
-# p10 first-set whole-genome sequencing additions only.
+# p10 first-set WGS preparation additions only.
 # These are dry/dev movements in this file; tips are returned.
 P10_SOURCE_STEPS = [
     (1, 3.0, "Lysis Mix"),

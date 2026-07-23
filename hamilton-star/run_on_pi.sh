@@ -12,7 +12,7 @@
 #
 # Examples:
 #   ./run_on_pi.sh starlab_live/test_star_no_autoload.py
-#   ./run_on_pi.sh starlab_live/01_ampseq_pcr1_mastermix_col1.py --mode deck
+#   ./run_on_pi.sh starlab_live/01_targeted_pcr_round1_mastermix_col1.py --mode deck
 #
 # Safety: many scripts move the deck. Confirm the deck and area are clear before
 # running anything that homes, aspirates, or moves plates.

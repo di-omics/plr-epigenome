@@ -53,13 +53,13 @@ Each protocol package has the same shape: `config.py` (paper-traceable parameter
 [`hamilton-star/`](hamilton-star) is the on-instrument development for a physical
 Hamilton Microlab STAR, driven by PyLabRobot on a dedicated Raspberry Pi. Where
 `tipseq_plr/` is simulation-first, this is the code that actually moves the deck:
-whole-genome sequencing and targeted PCR liquid handling, iSWAP plate moves, and heater-shaker
+PTA/WGA and targeted PCR library preparation liquid handling, iSWAP plate moves, and heater-shaker
 steps, developed and validated dry, with real-reagent runs gated behind typed
 confirmation tokens.
 
 | Path | What it is |
 |---|---|
-| [`hamilton-star/protocols/`](hamilton-star/protocols) | curated Bio Validation 0 runners (whole-genome sequencing, targeted PCR) |
+| [`hamilton-star/protocols/`](hamilton-star/protocols) | curated Bio Validation 0 runners (PTA/WGA, targeted PCR library preparation) |
 | [`hamilton-star/starlab_live/`](hamilton-star/starlab_live) | full live working set mirrored from the Pi, the source of truth for what runs on the instrument |
 | [`hamilton-star/setup/`](hamilton-star/setup) | Pi setup and safe-startup notes; the Pi password and lab-internal IPs are kept private and appear here only as placeholders |
 | [`hamilton-star/run_on_pi.sh`](hamilton-star/run_on_pi.sh) | sync this repo to the Pi and run a chosen script in the instrument venv, without disturbing the Pi's own working directory |

@@ -9,7 +9,7 @@ from pylabrobot.resources.hamilton import STARDeck, TIP_CAR_480_A00
 from pylabrobot.resources import PLT_CAR_L5AC_A00, CellTreat_96_wellplate_350ul_Fb, Coordinate
 import pylabrobot.resources as plr_resources
 
-# whole-genome sequencing Bio Validation 0
+# WGS preparation Bio Validation 0
 # SOURCE-LOW ASPIRATION PATCH:
 # - Empty/under-pickup happened with both p10 and p50 behavior, so source aspiration height is the likely issue.
 # - Source aspiration height lowered from 3.3 to 1.5 for both p10 and p50 constants.

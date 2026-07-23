@@ -9,7 +9,7 @@ from pylabrobot.resources.hamilton import STARDeck, TIP_CAR_480_A00
 from pylabrobot.resources import PLT_CAR_L5AC_A00, CellTreat_96_wellplate_350ul_Fb, Coordinate
 import pylabrobot.resources as plr_resources
 
-# whole-genome sequencing Bio Validation 0
+# WGS preparation Bio Validation 0
 # Y-SAFE DISPENSE PATCH:
 # - Bad y=3.20 caused Hamilton/PyLabRobot <9 mm adjacent-channel spacing error.
 # - Source aspiration stays at old working Y=3.35.
