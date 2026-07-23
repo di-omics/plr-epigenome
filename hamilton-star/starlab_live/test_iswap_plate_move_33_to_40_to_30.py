@@ -9,7 +9,7 @@ from pylabrobot.resources import (
 )
 
 # ---------------------------------------------------------------------
-# iSWAP plate move test - current ResolveDNA deck
+# iSWAP plate move test - current whole-genome sequencing deck
 #
 # Goal:
 #   Move one 96WP by iSWAP:
@@ -55,7 +55,7 @@ async def main():
         lh.deck.assign_child_resource(cleanup_carrier, rails=CLEANUP_RAIL)
         lh.deck.assign_child_resource(final_carrier, rails=FINAL_RAIL)
 
-        # Same plate type used in the current ResolveDNA LH protocol.
+        # Same plate type used in the current whole-genome sequencing LH protocol.
         work_plate = CellTreat_96_wellplate_350ul_Fb(name="resolve_work_plate")
 
         # Physical starting state: plate is on rail 33 pos 0.
