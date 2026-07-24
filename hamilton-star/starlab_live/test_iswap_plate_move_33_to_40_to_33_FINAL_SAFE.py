@@ -82,7 +82,7 @@ async def main():
         lh.deck.assign_child_resource(start_carrier, rails=START_RAIL)
         lh.deck.assign_child_resource(cleanup_carrier, rails=CLEANUP_RAIL)
 
-        work_plate = CellTreat_96_wellplate_350ul_Fb(name="resolve_work_plate")
+        work_plate = CellTreat_96_wellplate_350ul_Fb(name="work_plate")
 
         # Physical starting state must match this:
         # rail 33 pos 0: plate present

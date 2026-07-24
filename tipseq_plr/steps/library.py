@@ -3,7 +3,7 @@ Stage 5, library construction: fragment, index, size-select.
 
     fragmentation: + TAPS buffer + ME-B-only Tn5, 55C 6 min; quench with 4 M GuHCl
     purify:        2.0x SPRI, elute in 16 uL, discard beads (fresh eluate now)
-    PCR indexing:  + NEBNext 2X + i5 + i7; 72C gap-fill, then N cycles (qPCR-set)
+    PCR indexing:  + high-fidelity 2X mix + i5 + i7; 72C gap-fill, then N cycles
     cleanup:       0.85x left-side SPRI size selection (>200 bp)
 """
 

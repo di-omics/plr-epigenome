@@ -56,7 +56,7 @@ async def main():
         lh.deck.assign_child_resource(final_carrier, rails=FINAL_RAIL)
 
         # Same plate type used in the current WGS preparation LH protocol.
-        work_plate = CellTreat_96_wellplate_350ul_Fb(name="resolve_work_plate")
+        work_plate = CellTreat_96_wellplate_350ul_Fb(name="work_plate")
 
         # Physical starting state: plate is on rail 33 pos 0.
         start_carrier[START_POS] = work_plate

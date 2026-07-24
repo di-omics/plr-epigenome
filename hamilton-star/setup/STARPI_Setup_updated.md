@@ -26,13 +26,13 @@ Run PyLabRobot on a dedicated Raspberry Pi 5 (`starpi`), SSH into it from a Mac,
 
 ---
 
-## Access mode 1: Onsite Ethernet via Preventive Medicine VLAN
+## Access mode 1: Onsite Ethernet via research lab VLAN
 
-This mode is for using the Raspberry Pi on the **onsite wall ethernet ports** at Preventive Medicine.
+This mode is for using the Raspberry Pi on the **onsite wall ethernet ports** at research lab.
 
 ### Current known-good behavior
 
-- Wall ports were moved to the **Preventive Medicine VLAN**
+- Wall ports were moved to the **research lab VLAN**
 - The Pi currently receives a DHCP address on:
 
 ```text
@@ -92,7 +92,7 @@ python test_star_no_autoload.py
 
 ## Access mode 2: Direct connection / previous workflow
 
-This mode is for the previous direct-connect setup from your computer. Keep using this workflow when you are not accessing the Pi through the onsite Preventive Medicine wall ethernet VLAN.
+This mode is for the previous direct-connect setup from your computer. Keep using this workflow when you are not accessing the Pi through the onsite research lab wall ethernet VLAN.
 
 ### SSH into the Pi
 

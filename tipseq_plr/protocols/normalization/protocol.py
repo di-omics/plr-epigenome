@@ -2,7 +2,7 @@
 Plate-normalization protocol.
 
     source plate (96 x 12 uL)
-      -> Qubit dsDNA HS prep on a 2 uL aliquot into a black assay plate
+      -> high-sensitivity dsDNA assay on a 2 uL aliquot in a black plate
       -> Tecan read (Ex485/Em530) + dsDNA standard curve
       -> per-well concentration
       -> normalize: sample + water into a destination plate at a uniform
@@ -13,7 +13,7 @@ even without PyLabRobot, in a logging dry mode) like the rest of plr-epigenome.
 
 Deck roles (from deck.build_deck):
     working_plate -> SOURCE   (the 96 x 12 uL input)
-    qc_plate      -> ASSAY    (black plate for the Qubit read)
+    qc_plate      -> ASSAY    (black plate for the fluorescence read)
     index_plate   -> DEST     (normalized output)
 """
 
@@ -75,13 +75,13 @@ class _NormOps:
 
     async def dispense_working_solution(self):
         """WS into every assay well (same volume), one tip column reused."""
-        vol = self.cfg.qubit.ws_per_well_ul
-        self.reg.charge(C.QUBIT_HS_WS, vol, wells=self.ncols * 8)
-        logger.info("assay: dispense %.0f uL Qubit HS working solution x %d cols",
+        vol = self.cfg.assay.ws_per_well_ul
+        self.reg.charge(C.DSDNA_ASSAY_WORKING_SOLUTION, vol, wells=self.ncols * 8)
+        logger.info("assay: dispense %.0f uL dsDNA working solution x %d cols",
                     vol, self.ncols)
         if self.dry:
             return
-        src = self.reg.resource_for(self.dm, C.QUBIT_HS_WS)
+        src = self.reg.resource_for(self.dm, C.DSDNA_ASSAY_WORKING_SOLUTION)
         await self._pick(self.dm.tips_300, 0)
         for c in range(self.ncols):
             await self.lh.aspirate(self._eight_channels(src), vols=[vol] * 8)
@@ -91,7 +91,7 @@ class _NormOps:
     async def aliquot_samples_to_assay(self):
         """Move `sample_aliquot_ul` from each source well into the assay plate.
         Fresh tips per column (sample-contacting)."""
-        vol = self.cfg.qubit.sample_aliquot_ul
+        vol = self.cfg.assay.sample_aliquot_ul
         logger.info("assay: aliquot %.1f uL source -> assay x %d cols", vol, self.ncols)
         if self.dry:
             return
@@ -147,32 +147,32 @@ class PlateNormalization:
         self._rng = random.Random(11)
 
     # -- assay ---------------------------------------------------------------
-    async def _qubit_prep(self):
-        logger.info("== Qubit HS prep (aliquot %.1f uL, %s dye, %.0f uL assay) ==",
-                    self.cfg.qubit.sample_aliquot_ul, self.cfg.qubit.dye_ratio,
-                    self.cfg.qubit.assay_volume_ul)
+    async def _assay_prep(self):
+        logger.info("== dsDNA assay prep (aliquot %.1f uL, %s dye, %.0f uL assay) ==",
+                    self.cfg.assay.sample_aliquot_ul, self.cfg.assay.dye_ratio,
+                    self.cfg.assay.assay_volume_ul)
         await self.ops.dispense_working_solution()
         await self.ops.aliquot_samples_to_assay()
-        await _sleep(self.cfg.qubit.incubation_s, self._rc)
+        await _sleep(self.cfg.assay.incubation_s, self._rc)
 
     def _read_standards(self) -> List[tuple]:
         """(ng/uL, RFU) for the standards strip. On hardware this reads the
         dedicated standards wells; in simulation it synthesizes RFUs consistent
         with the Tecan sample sim (RFU ~ 50 + ng*800)."""
         pts = []
-        for ng in self.cfg.qubit.standard_ng_per_ul:
+        for ng in self.cfg.assay.standard_ng_per_ul:
             rfu = 50 + ng * 800 + self._rng.uniform(-25, 25)
             pts.append((ng, rfu))
         return pts
 
     async def _read_samples(self) -> Dict[str, float]:
         grid = await self.devices.reader.read_fluorescence(
-            excitation_wavelength=self.cfg.qubit.excitation_nm,
-            emission_wavelength=self.cfg.qubit.emission_nm,
+            excitation_wavelength=self.cfg.assay.excitation_nm,
+            emission_wavelength=self.cfg.assay.emission_nm,
         )
         std = self._read_standards()
         m, b = _least_squares([r for _, r in std], [ng for ng, _ in std])  # ng = m*RFU + b
-        logger.info("Qubit standard curve: ng/uL = %.4g*RFU + %.4g", m, b)
+        logger.info("dsDNA standard curve: ng/uL = %.4g*RFU + %.4g", m, b)
         concs: Dict[str, float] = {}
         for c in range(self.ops.ncols):
             for r in range(8):
@@ -186,7 +186,7 @@ class PlateNormalization:
                     self.cfg.num_samples, self.cfg.target_ng_per_ul, self.cfg.final_volume_ul)
         await self.devices.setup()
         try:
-            await self._qubit_prep()
+            await self._assay_prep()
             concs = await self._read_samples()
             plan = build_plan(concs, self.cfg)
             await self._execute(plan)

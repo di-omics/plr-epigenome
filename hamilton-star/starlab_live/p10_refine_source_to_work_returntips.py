@@ -1,3 +1,14 @@
+from pathlib import Path as _MethodPath
+import sys as _method_sys
+
+_METHOD_ROOT = next(
+    parent for parent in _MethodPath(__file__).resolve().parents
+    if parent.name == "hamilton-star"
+)
+if str(_METHOD_ROOT) not in _method_sys.path:
+    _method_sys.path.insert(0, str(_METHOD_ROOT))
+from operator_parameters import required_nonnegative, required_positive
+
 import argparse
 import asyncio
 from typing import Dict, List
@@ -59,12 +70,12 @@ P10_BLOWOUT_AIR_VOLUME = 1.0
 # p10 first-set WGS preparation additions only.
 # These are dry/dev movements in this file; tips are returned.
 P10_SOURCE_STEPS = [
-    (1, 3.0, "Lysis Mix"),
-    (2, 6.0, "Reaction Mix"),
-    (3, 3.0, "DNA Prep Master Mix"),
-    (4, 4.0, "FERAT Master Mix"),
-    (5, 5.0, "UDI Adapters - VERIFY MAP"),
-    (6, 5.0, "LP2L"),
+    (1, required_positive("wgs.stage_1_volume_ul"), "operator WGS stage 1"),
+    (2, required_positive("wgs.stage_2_volume_ul"), "operator WGS stage 2"),
+    (3, required_positive("wgs.stage_3_volume_ul"), "operator WGS stage 3"),
+    (4, required_positive("wgs.stage_4_volume_ul"), "operator WGS stage 4"),
+    (5, required_positive("wgs.stage_5_volume_ul"), "operator WGS stage 5"),
+    (6, required_positive("wgs.stage_6_volume_ul"), "operator WGS stage 6"),
 ]
 
 P10_TIP_FACTORY_CANDIDATES = [

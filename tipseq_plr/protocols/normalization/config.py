@@ -1,11 +1,11 @@
 """
 Parameters for the plate-normalization protocol.
 
-Flow: high-sensitivity Qubit dsDNA prep on an aliquot of each source well, read
+Flow: a high-sensitivity dsDNA fluorescence assay on an aliquot of each source well, read
 on the Tecan, quantify against a standard curve, then normalize a 96-well plate
 to a uniform concentration in a destination plate.
 
-Source wells hold 12 uL. A small aliquot is consumed by the Qubit assay; the rest
+Source wells hold 12 uL. A small aliquot is consumed by the assay; the rest
 is the material available to normalize. All volumes uL, concentrations ng/uL.
 """
 
@@ -15,10 +15,10 @@ from dataclasses import dataclass, field
 
 
 @dataclass
-class QubitHS:
-    """Qubit dsDNA High Sensitivity assay, adapted to a black 96-well plate.
+class DsdnaAssay:
+    """High-sensitivity dsDNA fluorescence assay in a black 96-well plate.
 
-    Working solution (WS) = Qubit HS reagent diluted 1:200 in HS buffer. Per well
+    Working solution (WS) = dsDNA dye diluted 1:200 in assay buffer. Per well
     we combine `sample_aliquot_ul` of sample with WS to `assay_volume_ul` total,
     incubate briefly at RT, and read fluorescence. Standards are prepared the same
     way (same aliquot into WS) from known dsDNA concentrations, so the curve maps
@@ -61,9 +61,9 @@ class NormConfig:
     star_id: str = "STAR"
     tecan_host: str = "192.168.1.60"
 
-    qubit: QubitHS = field(default_factory=QubitHS)
+    assay: DsdnaAssay = field(default_factory=DsdnaAssay)
 
     @property
     def usable_source_ul(self) -> float:
-        """Sample volume available to normalize after the Qubit aliquot + dead."""
-        return self.source_volume_ul - self.qubit.sample_aliquot_ul - self.source_dead_ul
+        """Sample volume available to normalize after the assay aliquot + dead."""
+        return self.source_volume_ul - self.assay.sample_aliquot_ul - self.source_dead_ul

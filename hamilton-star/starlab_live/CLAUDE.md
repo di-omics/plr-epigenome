@@ -13,7 +13,7 @@ Real `STARBackend` runs are **human-gated**. These rules are not optional:
 - **Never run hardware unattended.** A person must be watching the deck for every real run.
 - **Always dry-run first** on `STARChatterboxBackend(skip_autoload=True)`, which simulates the protocol and prints commands without moving anything. Only after a clean chatterbox run should a human-gated `STARBackend` run follow.
 - **Always run `--mode deck` first on hardware** (assignment only, no movement) to confirm the deck layout matches reality before any liquid-handling mode.
-- **Single-cell whole-genome amplification discards tips, never returns them** (carryover contamination is fatal to single-cell work). Returning tips (`--return-tips`) is acceptable only for water/dry rehearsals, never for real reagent runs.
+- **Single-cell WGS preparation discards tips, never returns them** (carryover contamination is fatal to single-cell work). Returning tips (`--return-tips`) is acceptable only for water/dry rehearsals, never for real reagent runs.
 - **Verify PyLabRobot API claims against the installed source** in `env/`. AI summaries frequently misreport PLR import paths and signatures; trust the 0.2.1 source, not recollection.
 
 ### Known PLR 0.2.1 quirk (not a bug)
@@ -25,12 +25,15 @@ Aspirating from a trough with a broadcast well list (`trough["A1"] * 8`) trips P
 ```bash
 source env/bin/activate          # venv lives on the Pi only; gitignored, not in source
 python <script>.py               # most scripts; runs asyncio.run(main())
-python 00_pta_wga_...py --mode deck   # production scripts: assign deck only, NO movement (safe pre-check)
+python 00_wgs_prep_...py --mode deck   # production scripts: assign deck only, NO movement (safe pre-check)
 ```
 
 - `env/` is the Python 3.13 virtualenv. It is gitignored and exists only on `starpi`; do not commit it or assume it exists when working off-robot.
 - The STAR connects via USB, Hamilton vendor id `08af` (`lsusb | grep -i 08af`). If it's missing the robot is off or unplugged.
-- `run_pta_wga_dry_e2e.sh` is a guided, interactive **dry rehearsal** of the whole-genome sequencing workflow – it prompts the operator between steps and runs the protocol script with `--return-tips`.
+- `run_wgs_prep_dry_e2e.sh` is a guided, interactive **dry rehearsal** of the whole-genome sequencing workflow – it prompts the operator between steps and runs the protocol script with `--return-tips`.
+- Assay scripts require `PLR_METHOD_PARAMETERS_FILE` to point to an
+  operator-approved local JSON profile. Public code contains no wet-lab recipe
+  defaults; see `../METHOD_PARAMETERS.md`.
 - Workflow is terminal-first with the `git` CLI.
 
 ### Standard robot lifecycle (every script follows this)
@@ -64,9 +67,10 @@ The earlier-generation deck used rails 19/26/33/40 with p1000 and p50. Those scr
 
 ## Production whole-genome sequencing front-end
 
-`00_pta_wga_col1_swap_source_staged_discardtips_P10_sourceH00_dspH05_bo7.py` is the **current-deck whole-genome sequencing front-end**. Verified on real hardware **2026-06-15**.
+`00_wgs_prep_col1_swap_source_staged_discardtips_P10_sourceH00_dspH05_bo7.py` is the **current-deck whole-genome sequencing front-end**. Verified on real hardware **2026-06-15**.
 
-- **Modes:** `lysis` (3 µL, p10 col 1) and `reaction` (6 µL, p10 col 2) are the clean, verified steps.
+- **Modes:** `lysis` and `reaction` are independently selectable, verified
+  motion steps. Their liquid volumes come from the local method profile.
 - **`--mode all-dev` has a `KeyError` bug – do not use it.** Run `lysis` / `reaction` individually.
 - **Locked geometry:** source aspirate height `0.0`, work dispense height `0.5`, dispense XY `Coordinate(-0.68, 3.22, 0.0)`, blowout `7 µL`, `1 s` post-dispense settle.
 - **Discard tips by default**; `--return-tips` only for observation/water runs (see safety rules).

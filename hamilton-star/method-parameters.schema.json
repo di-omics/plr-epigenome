@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/plr-epigenome/method-parameters.schema.json",
+  "title": "Operator-approved WGS and PCR enrichment method parameters",
+  "type": "object",
+  "additionalProperties": false,
+  "anyOf": [
+    { "required": ["wgs"] },
+    { "required": ["pcr_enrichment"] }
+  ],
+  "properties": {
+    "wgs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stage_1_volume_ul",
+        "stage_2_volume_ul",
+        "stage_3_volume_ul",
+        "stage_4_volume_ul",
+        "stage_5_volume_ul",
+        "stage_6_volume_ul",
+        "stage_7_volume_ul",
+        "cleanup"
+      ],
+      "properties": {
+        "stage_1_volume_ul": { "$ref": "#/$defs/positiveNumber" },
+        "stage_2_volume_ul": { "$ref": "#/$defs/positiveNumber" },
+        "stage_3_volume_ul": { "$ref": "#/$defs/positiveNumber" },
+        "stage_4_volume_ul": { "$ref": "#/$defs/positiveNumber" },
+        "stage_5_volume_ul": { "$ref": "#/$defs/positiveNumber" },
+        "stage_6_volume_ul": { "$ref": "#/$defs/positiveNumber" },
+        "stage_7_volume_ul": { "$ref": "#/$defs/positiveNumber" },
+        "thermal_program_id": { "type": "string", "minLength": 1 },
+        "cleanup": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "bead_volume_ul",
+            "supernatant_remove_ul",
+            "wash_add_ul",
+            "wash_remove_ul",
+            "residual_remove_ul",
+            "elution_ul",
+            "final_transfer_ul",
+            "wash_incubation_seconds"
+          ],
+          "properties": {
+            "bead_volume_ul": { "$ref": "#/$defs/positiveNumber" },
+            "supernatant_remove_ul": { "$ref": "#/$defs/positiveNumber" },
+            "wash_add_ul": { "$ref": "#/$defs/positiveNumber" },
+            "wash_remove_ul": { "$ref": "#/$defs/positiveNumber" },
+            "residual_remove_ul": { "$ref": "#/$defs/positiveNumber" },
+            "elution_ul": { "$ref": "#/$defs/positiveNumber" },
+            "final_transfer_ul": { "$ref": "#/$defs/positiveNumber" },
+            "wash_incubation_seconds": { "$ref": "#/$defs/nonnegativeNumber" }
+          }
+        }
+      }
+    },
+    "pcr_enrichment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "round_1_transfer_ul",
+        "round_2_transfer_ul",
+        "sample_transfer_ul",
+        "thermal_program_id",
+        "cleanup"
+      ],
+      "properties": {
+        "round_1_transfer_ul": { "$ref": "#/$defs/positiveNumber" },
+        "round_2_transfer_ul": { "$ref": "#/$defs/positiveNumber" },
+        "sample_transfer_ul": { "$ref": "#/$defs/positiveNumber" },
+        "thermal_program_id": { "type": "string", "minLength": 1 },
+        "cleanup": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "bead_volume_ul",
+            "supernatant_remove_ul",
+            "wash_add_ul",
+            "wash_remove_ul",
+            "residual_remove_ul",
+            "elution_ul",
+            "bead_ratio",
+            "input_volume_ul",
+            "wash_incubation_seconds"
+          ],
+          "properties": {
+            "bead_volume_ul": { "$ref": "#/$defs/positiveNumber" },
+            "supernatant_remove_ul": { "$ref": "#/$defs/positiveNumber" },
+            "wash_add_ul": { "$ref": "#/$defs/positiveNumber" },
+            "wash_remove_ul": { "$ref": "#/$defs/positiveNumber" },
+            "residual_remove_ul": { "$ref": "#/$defs/positiveNumber" },
+            "elution_ul": { "$ref": "#/$defs/positiveNumber" },
+            "bead_ratio": { "$ref": "#/$defs/positiveNumber" },
+            "input_volume_ul": { "$ref": "#/$defs/positiveNumber" },
+            "wash_incubation_seconds": { "$ref": "#/$defs/nonnegativeNumber" }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "positiveNumber": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "nonnegativeNumber": {
+      "type": "number",
+      "minimum": 0
+    }
+  }
+}

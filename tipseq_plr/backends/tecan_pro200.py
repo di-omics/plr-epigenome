@@ -10,7 +10,7 @@ control is typically driven through one of:
 
 We expose read_absorbance / read_fluorescence / read_luminescence returning a
 list[list[float]] (row-major well grid). For TIP-seq QC we use fluorescence:
-an intercalating dsDNA dye (PicoGreen-style) read at Ex 485 / Em 530, converted
+an intercalating dsDNA dye read at Ex 485 / Em 530, converted
 to ng/uL against an on-plate standard curve by `qc.py`.
 
 `simulate=True` synthesizes plausible readings so the QC gate logic can be

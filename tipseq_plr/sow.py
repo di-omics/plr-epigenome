@@ -33,7 +33,7 @@ _KNOWN_TARGETS = ["H3K27me3", "H3K27ac", "H3K4me3", "H3K9me3", "H3K36me3",
 _ROUTES: List[Tuple[str, Tuple[str, ...]]] = [
     ("cut_and_tag",   ("cut&tag", "cut & tag", "cut and tag", "cutandtag", "cut_and_tag")),
     ("hydrop_atac",   ("hydrop", "scatac", "sc-atac", "atac", "droplet", "onyx")),
-    ("normalization", ("normaliz", "normalis", "qubit", "equimolar", "concentration balanc")),
+    ("normalization", ("normaliz", "normalis", "dsdna", "equimolar", "concentration balanc")),
     ("tipseq",        ("tip-seq", "tipseq", "targeted insertion of promoters", "cut&tag-ivt")),
 ]
 

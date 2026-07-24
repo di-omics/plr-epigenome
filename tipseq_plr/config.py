@@ -85,37 +85,36 @@ WATER = "nuclease_free_water"
 EDTA_0_5M = "edta_0_5M"
 SDS_10 = "sds_10pct"
 PROTEINASE_K = "proteinase_k"          # 20 mg/ml
-TAQ_5X = "taq_5x_mastermix"            # NEB M0285
+TAQ_5X = "taq_5x_mastermix"
 T7_NTP = "t7_ntp"                      # 100 mM NTP set
 T7_BUFFER = "t7_10x_buffer"
-T7_POLYMERASE = "t7_polymerase_mix"    # HiScribe E2040
+T7_POLYMERASE = "t7_polymerase_mix"
 RNASE_INHIBITOR = "rnase_inhibitor"
 RANDOM_HEXAMER = "random_hexamer"      # 20 uM
-RT_BUFFER_5X = "rt_5x_buffer"          # SMART MMLV first-strand buffer
+RT_BUFFER_5X = "rt_5x_buffer"          # MMLV first-strand buffer
 DNTP_10MM = "dntp_10mm"
 DTT_100MM = "dtt_100mm"
-MMLV_RT = "mmlv_rt"                    # SMART MMLV reverse transcriptase
+MMLV_RT = "mmlv_rt"                    # MMLV reverse transcriptase
 RNASE_H = "rnase_h"
 SSS_PRIMER = "second_strand_primer"    # sss_scnXTv2 / sss_sci-nXTv2
 TAPS_BUFFER = "taps_buffer"
 TN5_MEB = "tn5_me_b"                   # ME-B-only loaded Tn5, 0.7 uM
 GUHCL = "guanidine_hcl"                # 4 M final
-PCR_MASTERMIX = "nebnext_2x_pcr"       # NEB M0541
-INDEX_I5 = "index_i5_primers"          # scT7_S5XX (sci) or Nextera i5
-INDEX_I7 = "index_i7_primers"          # Nextera i7
-QUANT_DYE = "dsdna_quant_dye"          # intercalating dsDNA dye for Tecan quant (e.g. PicoGreen)
-QUBIT_HS_WS = "qubit_hs_working_solution"  # Qubit dsDNA HS reagent 1:200 in HS buffer
+PCR_MASTERMIX = "high_fidelity_2x_pcr"
+INDEX_I5 = "index_i5_primers"          # scT7_S5XX (sci) or standard i5
+INDEX_I7 = "index_i7_primers"          # standard i7
+QUANT_DYE = "dsdna_quant_dye"          # intercalating dsDNA dye for Tecan quantification
+DSDNA_ASSAY_WORKING_SOLUTION = "dsdna_assay_working_solution"
 
-# NEBNext Ultra II DNA Library Prep (UMI) kit reagents (NEB #E7645 / #E7103).
-# Used by protocols/dna_ultra2_umi. Enzyme mixes ride the chilled enzymes carrier.
-ULTRA2_END_PREP_BUFFER = "ultra2_end_prep_buffer"        # green cap
-ULTRA2_END_PREP_ENZYME = "ultra2_end_prep_enzyme"        # green cap
-ULTRA2_LIGATION_MM = "ultra2_ligation_master_mix"        # red cap (very viscous)
-ULTRA2_LIGATION_ENHANCER = "ultra2_ligation_enhancer"    # red cap
-UMI_ADAPTOR = "nebnext_umi_adaptor"                      # UDI UMI adaptor, diluted per input
+# Generic DNA library-preparation reagents. Enzyme mixes ride the chilled carrier.
+END_REPAIR_BUFFER = "end_repair_buffer"
+END_REPAIR_ENZYME = "end_repair_enzyme"
+LIGATION_MASTER_MIX = "ligation_master_mix"       # very viscous
+LIGATION_ENHANCER = "ligation_enhancer"
+UMI_ADAPTOR = "umi_adaptor"                       # diluted per input
 UMI_DILUTION_BUFFER = "umi_adaptor_dilution_buffer"      # for the adaptor dilution table
-ULTRA2_Q5_MM = "ultra2_q5_master_mix"                    # blue cap
-NEBNEXT_UDI_PRIMERS = "nebnext_udi_primer_mix"           # blue cap, i5/i7 UDI primers
+LIBRARY_PCR_MASTER_MIX = "library_pcr_master_mix"
+UDI_PRIMER_MIX = "udi_primer_mix"                 # i5/i7 UDI primers
 TE_0_1X = "te_0_1x"                                      # 0.1X TE elution (1 mM Tris, 0.1 mM EDTA)
 
 

@@ -1,3 +1,14 @@
+from pathlib import Path as _MethodPath
+import sys as _method_sys
+
+_METHOD_ROOT = next(
+    parent for parent in _MethodPath(__file__).resolve().parents
+    if parent.name == "hamilton-star"
+)
+if str(_METHOD_ROOT) not in _method_sys.path:
+    _method_sys.path.insert(0, str(_METHOD_ROOT))
+from operator_parameters import required_nonnegative, required_positive
+
 import argparse
 import asyncio
 from typing import Dict, List
@@ -14,7 +25,7 @@ from pylabrobot.resources import (
 import pylabrobot.resources as plr_resources
 
 # -----------------------------------------------------------------------------
-# WGS preparation (PTA) - p10 + p50 source-to-work RHODAMINE / LH geometry script
+# WGS preparation (WGS preparation) - p10 + p50 source-to-work RHODAMINE / LH geometry script
 # Hamilton STAR + PyLabRobot on starpi
 #
 # Purpose:
@@ -70,9 +81,9 @@ WORK_96WP_DSP_HEIGHT = [16.0] * 8
 WORK_96WP_DSP_OFFSETS = [Coordinate(-0.15, 3.35, 0.0)] * 8
 
 # Blowout tuning for rhodamine QC.
-# p10 additions are 3-6 uL: modest blowout to reduce hanging droplets without splashing.
+# Lower-volume operator-profile stages use a modest blowout to reduce hanging droplets without splashing.
 P10_BLOWOUT_AIR_VOLUME = 1.0
-# p50 is used for the 20 uL step.
+# p50 is used for the larger operator-profile stage.
 P50_BLOWOUT_AIR_VOLUME = 2.0
 
 # Keep mix off by default for rhodamine placement/CV observation to avoid bubbles/splashing.
@@ -82,32 +93,32 @@ MIX_FLOW_RATE = 80
 # WGS preparation source 96DW layout.
 SRC_LYSIS_COL = 1
 SRC_REACTION_COL = 2
-SRC_DNAPREP_COL = 3
-SRC_FERAT_COL = 4
+SRC_DNA_FRAGMENTATION_COL = 3
+SRC_END_REPAIR_COL = 4
 SRC_ADAPTER_COL = 5
-SRC_LP2L_COL = 6
-SRC_LIBAMP_COL = 7
+SRC_LIGATION_MIX_COL = 6
+SRC_LIBRARY_PCR_COL = 7
 
 # Protocol volumes.
-VOL_LYSIS = 3.0
-VOL_REACTION = 6.0
-VOL_DNAPREP = 3.0
-VOL_FERAT = 4.0
-VOL_ADAPTER = 5.0
-VOL_LP2L = 5.0
-VOL_LIBAMP = 20.0
+VOL_LYSIS = required_positive("wgs.stage_1_volume_ul")
+VOL_REACTION = required_positive("wgs.stage_2_volume_ul")
+VOL_DNA_FRAGMENTATION = required_positive("wgs.stage_3_volume_ul")
+VOL_END_REPAIR = required_positive("wgs.stage_4_volume_ul")
+VOL_ADAPTER = required_positive("wgs.stage_5_volume_ul")
+VOL_LIGATION_MIX = required_positive("wgs.stage_6_volume_ul")
+VOL_LIBRARY_PCR = required_positive("wgs.stage_7_volume_ul")
 
 P10_STEPS = [
     (SRC_LYSIS_COL, VOL_LYSIS, "Lysis Mix / rhodamine source col 1"),
     (SRC_REACTION_COL, VOL_REACTION, "Reaction Mix / rhodamine source col 2"),
-    (SRC_DNAPREP_COL, VOL_DNAPREP, "DNA Prep Master Mix / rhodamine source col 3"),
-    (SRC_FERAT_COL, VOL_FERAT, "FERAT Master Mix / rhodamine source col 4"),
+    (SRC_DNA_FRAGMENTATION_COL, VOL_DNA_FRAGMENTATION, "DNA fragmentation master mix / rhodamine source col 3"),
+    (SRC_END_REPAIR_COL, VOL_END_REPAIR, "end-repair master mix / rhodamine source col 4"),
     (SRC_ADAPTER_COL, VOL_ADAPTER, "UDI Adapters / rhodamine source col 5"),
-    (SRC_LP2L_COL, VOL_LP2L, "LP2L / rhodamine source col 6"),
+    (SRC_LIGATION_MIX_COL, VOL_LIGATION_MIX, "ligation master mix / rhodamine source col 6"),
 ]
 
 P50_STEPS = [
-    (SRC_LIBAMP_COL, VOL_LIBAMP, "Amplification Master Mix / rhodamine source col 7"),
+    (SRC_LIBRARY_PCR_COL, VOL_LIBRARY_PCR, "library PCR master mix / rhodamine source col 7"),
 ]
 
 P10_TIP_FACTORY_CANDIDATES = [
@@ -354,7 +365,7 @@ async def run_p50_steps(
     source_96dw = resources["source_96dw"]
     work_96wp = resources["work_96wp"]
 
-    print("\n=== P50 RHODAMINE / 20 UL SOURCE-TO-WORK STEP ===")
+    print("\n=== P50 RHODAMINE / operator-supplied volume SOURCE-TO-WORK STEP ===")
     print(f"Selected p50 source columns: {source_cols}")
     print(f"Destination columns: {dest_cols}")
     await lh.pick_up_tips(resources["p50_tips"]["A1:H1"])

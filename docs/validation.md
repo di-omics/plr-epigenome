@@ -17,16 +17,16 @@ Every protocol occupies exactly one tier, and it only moves up by earning it.
 |---|---|---|
 | **UNTESTED** | PLR-authored, dry-runs in simulation. No physical evidence the STAR dispenses what the code says. | none (this is the starting point) |
 | **LIQUID_TESTED** | Liquid-handling accuracy and precision verified on the STAR. A claim about **volumes**, not biology. | a Rhodamine B assay with paired plate-reader data that clears the success criteria below |
-| **BIOVALIDATED** | The protocol produces the expected biological result (yield, QC, sequencing metrics). | tracked **privately**; deliberately **not in this public repo** |
+| **BIOVALIDATED** | The protocol produces the expected biological result (yield, QC, sequencing metrics). | a record in the laboratory's controlled biological-results system |
 
 Two rules make the ladder meaningful:
 
-- **Everything ships as UNTESTED.** All four protocols currently run in simulation
-  and carry no paired Rhodamine B evidence, so all four are UNTESTED. That is the
+- **Everything ships as UNTESTED.** All five protocols currently run in simulation
+  and carry no paired Rhodamine B evidence, so all five are UNTESTED. That is the
   honest label until data says otherwise.
-- **Biovalidation is private.** Biovalidation records are kept out of this
-  repository on purpose. The public code names the tier and where records live,
-  never the biological data itself.
+- **Biology records use controlled systems.** The automation reports the validation
+  tier and a configured record locator; biological-result payloads remain in the
+  laboratory's biological-results system.
 
 ## Liquid test: Rhodamine B, success criteria
 
@@ -93,5 +93,5 @@ passes on real STAR data, and record the dataset id next to it.
 
 This is a **volume** claim: the STAR moves the right liquid, accurately and
 reproducibly, within the plate reader's trustworthy range. It is the honest,
-public half of validation. The **biology** claim (biovalidation) is a separate,
-private tier and is not part of this repository.
+automation-facing half of validation. The **biology** claim (the BIOVALIDATED
+tier) is recorded separately in the laboratory's controlled results system.

@@ -1,3 +1,14 @@
+from pathlib import Path as _MethodPath
+import sys as _method_sys
+
+_METHOD_ROOT = next(
+    parent for parent in _MethodPath(__file__).resolve().parents
+    if parent.name == "hamilton-star"
+)
+if str(_METHOD_ROOT) not in _method_sys.path:
+    _method_sys.path.insert(0, str(_METHOD_ROOT))
+from operator_parameters import required_nonnegative, required_positive
+
 import argparse
 import asyncio
 from typing import Dict, List
@@ -14,7 +25,7 @@ from pylabrobot.resources import (
 import pylabrobot.resources as plr_resources
 
 # -----------------------------------------------------------------------------
-# WGS preparation (PTA) - p300 ethanol wash add/remove focused test
+# WGS preparation (WGS preparation) - p300 ethanol wash add/remove focused test
 # Hamilton STAR + PyLabRobot on starpi
 #
 # Purpose:
@@ -23,9 +34,8 @@ import pylabrobot.resources as plr_resources
 # - Tests removal from rail35 pos1 plate -> reservoir waste well at rail35 pos3.
 # - Excludes p10/p50 source-to-work, p1000, iSWAP, and full protocol logic.
 #
-# Protocol context:
-# - WGS preparation cleanup calls for adding 200 uL 80% ethanol to each well on magnet,
-#   incubating 30 seconds, then carefully removing ethanol without disturbing beads.
+# Method context:
+# - The local WGS profile supplies the wash liquid volume and incubation.
 # - This file starts with bead-safe/high removal geometry for observation.
 #
 # Active deck:
@@ -61,9 +71,9 @@ TROUGH_WATER_TEST = "A5"
 TROUGH_WASTE = "A12"
 
 # Default test volumes.
-DEFAULT_ADD_VOL = 200.0
-# Removal intentionally starts below full 200 uL to reduce risk while geometry is being tuned.
-DEFAULT_REMOVE_VOL = 180.0
+DEFAULT_ADD_VOL = required_positive("wgs.cleanup.wash_add_ul")
+# Removal intentionally starts below the full operator-profile wash addition to reduce risk while geometry is being tuned.
+DEFAULT_REMOVE_VOL = required_positive("wgs.cleanup.wash_remove_ul")
 
 # P300 add geometry: reservoir -> plate on mag/placeholder.
 P300_TROUGH_ASP_HEIGHT = [15.0] * 8
@@ -376,7 +386,7 @@ async def main():
                 tip_col=args.add_tip_col,
                 discard_tips=args.discard_tips,
             )
-            print("NOTE: Protocol incubation after ethanol add is 30 seconds on magnet before removal.")
+            print("NOTE: Use the operator-approved local wash incubation before removal.")
             await remove_from_mag_plate_to_waste(
                 lh,
                 resources,

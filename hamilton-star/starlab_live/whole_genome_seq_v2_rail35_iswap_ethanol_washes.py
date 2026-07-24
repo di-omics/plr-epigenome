@@ -1,3 +1,14 @@
+from pathlib import Path as _MethodPath
+import sys as _method_sys
+
+_METHOD_ROOT = next(
+    parent for parent in _MethodPath(__file__).resolve().parents
+    if parent.name == "hamilton-star"
+)
+if str(_METHOD_ROOT) not in _method_sys.path:
+    _method_sys.path.insert(0, str(_METHOD_ROOT))
+from operator_parameters import required_nonnegative, required_positive
+
 import argparse
 import asyncio
 from typing import Dict, List, Tuple
@@ -13,7 +24,7 @@ from pylabrobot.resources import (
 )
 import pylabrobot.resources as plr_resources
 
-# WGS preparation (PTA) Automation - V2 rail35 integrated scaffold
+# WGS preparation (WGS preparation) Automation - V2 rail35 integrated scaffold
 # Integrates:
 # - p10/p50 source 96DW -> work 96WP source-to-work additions.
 # - iSWAP move: rail35 pos0 work plate -> rail35 pos1 magnetic rack position.
@@ -69,22 +80,22 @@ ISWAP_POS0_DROPOFF_Z_MM = 20.0
 # 96DW source reagent layout.
 SRC_LYSIS_COL = 1
 SRC_REACTION_COL = 2
-SRC_DNAPREP_COL = 3
-SRC_FERAT_COL = 4
+SRC_DNA_FRAGMENTATION_COL = 3
+SRC_END_REPAIR_COL = 4
 SRC_ADAPTER_COL = 5
-SRC_LP2L_COL = 6
-SRC_LIBAMP_COL = 7
+SRC_LIGATION_MIX_COL = 6
+SRC_LIBRARY_PCR_COL = 7
 
 P10_STEPS: List[Tuple[int, float, str]] = [
-    (SRC_LYSIS_COL, 3.0, "Lysis Mix"),
-    (SRC_REACTION_COL, 6.0, "Reaction Mix"),
-    (SRC_DNAPREP_COL, 3.0, "DNA Prep Master Mix"),
-    (SRC_FERAT_COL, 4.0, "FERAT Master Mix"),
-    (SRC_ADAPTER_COL, 5.0, "UDI Adapters - VERIFY MAP"),
-    (SRC_LP2L_COL, 5.0, "LP2L"),
+    (SRC_LYSIS_COL, required_positive("wgs.stage_1_volume_ul"), "operator WGS stage 1"),
+    (SRC_REACTION_COL, required_positive("wgs.stage_2_volume_ul"), "operator WGS stage 2"),
+    (SRC_DNA_FRAGMENTATION_COL, required_positive("wgs.stage_3_volume_ul"), "operator WGS stage 3"),
+    (SRC_END_REPAIR_COL, required_positive("wgs.stage_4_volume_ul"), "operator WGS stage 4"),
+    (SRC_ADAPTER_COL, required_positive("wgs.stage_5_volume_ul"), "operator WGS stage 5"),
+    (SRC_LIGATION_MIX_COL, required_positive("wgs.stage_6_volume_ul"), "operator WGS stage 6"),
 ]
 P50_STEPS: List[Tuple[int, float, str]] = [
-    (SRC_LIBAMP_COL, 20.0, "Amplification Master Mix"),
+    (SRC_LIBRARY_PCR_COL, required_positive("wgs.stage_7_volume_ul"), "operator WGS stage 7"),
 ]
 
 # Reservoir layout.
@@ -95,9 +106,9 @@ TROUGH_ELUTION = "A4"
 TROUGH_WATER_TEST = "A5"
 TROUGH_WASTE = "A12"
 
-VOL_ETOH = 200.0
-VOL_ETOH_REMOVE = 180.0
-ETHANOL_INCUBATION_SECONDS = 30
+VOL_ETOH = required_positive("wgs.cleanup.wash_add_ul")
+VOL_ETOH_REMOVE = required_positive("wgs.cleanup.wash_remove_ul")
+ETHANOL_INCUBATION_SECONDS = required_nonnegative("wgs.cleanup.wash_incubation_seconds")
 
 # p10/p50 source-to-work geometry.
 P10_SOURCE_96DW_ASP_HEIGHT = [13.0] * 8
@@ -219,7 +230,7 @@ async def assign_deck(lh: LiquidHandler, plate_start: str = "work") -> Dict[str,
     p1000_tips = make_p1000_tiprack("r48_p1000_filter_tips")
     source_96dw = make_96dw_source_plate("rail35_pos2_source_96dw")
     trough = CellTreat_12_troughplate_15000ul_Vb(name="rail35_pos3_12w_reservoir")
-    work_plate = CellTreat_96_wellplate_350ul_Fb(name="resolve_work_96wp")
+    work_plate = CellTreat_96_wellplate_350ul_Fb(name="wgs_work_96wp")
 
     tip_carrier[P10_TIP_POS] = p10_tips
     tip_carrier[P50_TIP_POS] = p50_tips
@@ -406,7 +417,7 @@ async def p300_remove_from_mag_to_waste(lh, r, source_cols, waste_well_name, vol
 
 
 async def run_two_ethanol_washes(lh, r, dest_cols, discard_tips):
-    print("\n=== V2 ETHANOL WASHES ON MAGNET: two 200 uL washes with 30 sec incubations ===")
+    print("\n=== V2 ETHANOL WASHES ON MAGNET: two operator-supplied volume washes with operator-supplied duration incubations ===")
     await p300_add_from_reservoir_to_mag(lh, r, TROUGH_ETOH1, dest_cols, VOL_ETOH, tip_col=1, discard_tips=discard_tips)
     print(f"Incubating on magnet for {ETHANOL_INCUBATION_SECONDS} seconds...")
     await asyncio.sleep(ETHANOL_INCUBATION_SECONDS)

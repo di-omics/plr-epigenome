@@ -15,7 +15,7 @@ The dataset JSON is the paired plate-reader data from a real STAR run:
     }
 
 A protocol is promoted to LIQUID_TESTED only when this returns liquid_tested=true.
-Biovalidation is not handled here and is not part of this public repo.
+Biological-result validation is recorded in the configured laboratory results system.
 """
 
 from __future__ import annotations
@@ -25,12 +25,12 @@ import json
 import sys
 
 from .rhodamine import Reading, RhodamineCriteria, Standard, evaluate
-from .status import BIOVALIDATION_LOCATION, status_table
+from .status import BIOLOGY_RECORDS_LOCATION, status_table
 
 
 def cmd_status(a):
     print(status_table())
-    print(f"\nbiovalidation: {BIOVALIDATION_LOCATION}")
+    print(f"\nbiology records: {BIOLOGY_RECORDS_LOCATION}")
 
 
 def cmd_evaluate(a):

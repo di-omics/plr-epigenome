@@ -21,12 +21,14 @@ from .protocol import PlateNormalization
 
 
 def _parse(argv=None):
-    p = argparse.ArgumentParser(description="Qubit HS quant + 96-well normalization on Hamilton STAR")
+    p = argparse.ArgumentParser(
+        description="dsDNA fluorescence quantification + 96-well normalization on Hamilton STAR"
+    )
     p.add_argument("--samples", type=int, default=96)
     p.add_argument("--source-volume", type=float, default=12.0, help="uL per source well")
     p.add_argument("--target", type=float, default=1.0, help="target ng/uL")
     p.add_argument("--final", type=float, default=20.0, help="final volume uL per dest well")
-    p.add_argument("--aliquot", type=float, default=2.0, help="Qubit sample aliquot uL")
+    p.add_argument("--aliquot", type=float, default=2.0, help="assay sample aliquot uL")
     sim = p.add_mutually_exclusive_group()
     sim.add_argument("--simulate", dest="simulate", action="store_true", default=True)
     sim.add_argument("--no-simulate", dest="simulate", action="store_false")
@@ -43,7 +45,7 @@ async def _amain(a) -> int:
         final_volume_ul=a.final,
         simulate=a.simulate,
     )
-    cfg.qubit.sample_aliquot_ul = a.aliquot
+    cfg.assay.sample_aliquot_ul = a.aliquot
     setattr(cfg, "_sim_time_scale", 0.0)
 
     report = await PlateNormalization(cfg).run()

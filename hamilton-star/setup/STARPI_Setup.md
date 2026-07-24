@@ -153,7 +153,7 @@ git push
 
 If the file is not in the repo yet, first copy it into the repo root.
 
-## Clean push to `preventive-bio/hamilton-star`
+## Clean push to `di-omics/plr-epigenome`
 
 From the Pi, run:
 
@@ -163,7 +163,7 @@ git remote -v
 git branch --show-current
 ```
 
-If this repo is already cloned from `preventive-bio/hamilton-star`, then copy in the file and push:
+If this repo is already cloned from `di-omics/plr-epigenome`, then copy in the file and push:
 
 ```bash
 cp /path/to/STARPI_Setup.md ~/star-lab/STARPI_Setup.md
@@ -175,13 +175,13 @@ git push origin $(git branch --show-current)
 If the remote is missing, add it:
 
 ```bash
-git remote add origin git@github.com:preventive-bio/hamilton-star.git
+git remote add origin git@github.com:di-omics/plr-epigenome.git
 ```
 
 If SSH auth is not set up on the Pi and HTTPS is easier:
 
 ```bash
-git remote add origin https://github.com/preventive-bio/hamilton-star.git
+git remote add origin https://github.com/di-omics/plr-epigenome.git
 ```
 
 Then push your current branch:

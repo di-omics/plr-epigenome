@@ -1,3 +1,14 @@
+from pathlib import Path as _MethodPath
+import sys as _method_sys
+
+_METHOD_ROOT = next(
+    parent for parent in _MethodPath(__file__).resolve().parents
+    if parent.name == "hamilton-star"
+)
+if str(_METHOD_ROOT) not in _method_sys.path:
+    _method_sys.path.insert(0, str(_METHOD_ROOT))
+from operator_parameters import required_nonnegative, required_positive
+
 import asyncio
 from typing import List
 
@@ -16,7 +27,7 @@ from pylabrobot.resources import (
 import pylabrobot.resources as plr_resources
 
 # ---------------------------------------------------------------------
-# WGS preparation (PTA) - Hamilton STAR / PyLabRobot
+# WGS preparation (WGS preparation) - Hamilton STAR / PyLabRobot
 # LH-first scaffold, before adding iSWAP movements.
 #
 # Deck intent from Di:
@@ -132,11 +143,11 @@ P1000_MAG_DSP_OFFSETS = [Coordinate(DSP_X_RIGHT_SHIFT, 2.45, 27.0)] * 8
 # -----------------------------
 SRC_LYSIS_COL = 1
 SRC_REACTION_COL = 2
-SRC_DNAPREP_COL = 3
-SRC_FERAT_COL = 4
+SRC_DNA_FRAGMENTATION_COL = 3
+SRC_END_REPAIR_COL = 4
 SRC_ADAPTER_COL = 5
-SRC_LP2L_COL = 6
-SRC_LIBAMP_COL = 7
+SRC_LIGATION_MIX_COL = 6
+SRC_LIBRARY_PCR_COL = 7
 
 TROUGH_BEADS = "A1"
 TROUGH_ETOH1 = "A2"
@@ -147,18 +158,18 @@ TROUGH_ELUTION = "A4"
 # -----------------------------
 # Protocol volumes
 # -----------------------------
-VOL_LYSIS = 3
-VOL_REACTION = 6
-VOL_DNAPREP = 3
-VOL_FERAT = 4
-VOL_ADAPTER = 5
-VOL_LP2L = 5
-VOL_LIBAMP = 20
+VOL_LYSIS = required_positive("wgs.stage_1_volume_ul")
+VOL_REACTION = required_positive("wgs.stage_2_volume_ul")
+VOL_DNA_FRAGMENTATION = required_positive("wgs.stage_3_volume_ul")
+VOL_END_REPAIR = required_positive("wgs.stage_4_volume_ul")
+VOL_ADAPTER = required_positive("wgs.stage_5_volume_ul")
+VOL_LIGATION_MIX = required_positive("wgs.stage_6_volume_ul")
+VOL_LIBRARY_PCR = required_positive("wgs.stage_7_volume_ul")
 
-VOL_BEADS = 30
-VOL_ETOH = 200
-VOL_ELUTION = 42
-VOL_FINAL_TRANSFER = 40
+VOL_BEADS = required_positive("wgs.cleanup.bead_volume_ul")
+VOL_ETOH = required_positive("wgs.cleanup.wash_add_ul")
+VOL_ELUTION = required_positive("wgs.cleanup.elution_ul")
+VOL_FINAL_TRANSFER = required_positive("wgs.cleanup.final_transfer_ul")
 
 
 def wells_for_column(plate, col: int):
@@ -169,7 +180,7 @@ def mix_after_dispense(vol: float):
     # TEMP DISABLED 2026-04-27:
     # Mix caused geometry/Z issues during validation. Keep this helper so call sites
     # are easy to re-enable tomorrow, but return None for now.
-    # Intended future behavior: reagent additions mix 3x; beads/elution mix 3x; ethanol no mix.
+    # Intended future behavior: reagent additions mix operator-supplied ratio; beads/elution mix operator-supplied ratio; ethanol no mix.
     return None
 
 
@@ -237,8 +248,8 @@ async def transfer_from_trough(
     )
 
 
-async def run_wga_additions(lh, p50_tips, source_96dw, work_plate):
-    print("\n=== WGA ADDITIONS: rail 26 pos 1 96DW -> rail 33 pos 0 96WP ===")
+async def run_wgs_prep_additions(lh, p50_tips, source_96dw, work_plate):
+    print("\n=== WGS PREPARATION ADDITIONS: rail 26 pos 1 96DW -> rail 33 pos 0 96WP ===")
     await lh.pick_up_tips(p50_tips["A1:H1"])
 
     for col in DEST_COLUMNS:
@@ -254,7 +265,7 @@ async def run_wga_additions(lh, p50_tips, source_96dw, work_plate):
             f"source 96DW column {SRC_LYSIS_COL} (Lysis Mix)",
         )
 
-    print("PAUSE/TODO: seal, spin, mix 20 min RT at 1400 rpm, spin, plate on ice.")
+    print("PAUSE/TODO: seal/spin, then follow the operator-approved WGS handoff program before placing the plate on ice.")
 
     for col in DEST_COLUMNS:
         await transfer_column(
@@ -270,7 +281,7 @@ async def run_wga_additions(lh, p50_tips, source_96dw, work_plate):
         )
 
     await lh.return_tips()
-    print("PAUSE/TODO: seal, spin, mix 1 min RT at 1000 rpm, spin, thermocycler DNA Amplification.")
+    print("PAUSE/TODO: seal/spin, then follow the operator-approved WGS stage 2 handoff program.")
 
 
 async def run_library_prep_additions(lh, p50_tips, source_96dw, work_plate):
@@ -280,32 +291,32 @@ async def run_library_prep_additions(lh, p50_tips, source_96dw, work_plate):
     for col in DEST_COLUMNS:
         await transfer_column(
             lh,
-            source_96dw[f"A{SRC_DNAPREP_COL}:H{SRC_DNAPREP_COL}"],
+            source_96dw[f"A{SRC_DNA_FRAGMENTATION_COL}:H{SRC_DNA_FRAGMENTATION_COL}"],
             wells_for_column(work_plate, col),
-            VOL_DNAPREP,
+            VOL_DNA_FRAGMENTATION,
             P50_ASP_HEIGHT,
             P50_ASP_OFFSETS,
             P50_WORK_DSP_HEIGHT,
             P50_WORK_DSP_OFFSETS,
-            f"source 96DW column {SRC_DNAPREP_COL} (DNA Prep Master Mix)",
+            f"source 96DW column {SRC_DNA_FRAGMENTATION_COL} (DNA fragmentation master mix)",
         )
 
-    print("PAUSE/TODO: seal, spin/vortex/spin, DNAPREP thermocycler program.")
+    print("PAUSE/TODO: seal, spin/vortex/spin, DNA-fragmentation thermocycler program.")
 
     for col in DEST_COLUMNS:
         await transfer_column(
             lh,
-            source_96dw[f"A{SRC_FERAT_COL}:H{SRC_FERAT_COL}"],
+            source_96dw[f"A{SRC_END_REPAIR_COL}:H{SRC_END_REPAIR_COL}"],
             wells_for_column(work_plate, col),
-            VOL_FERAT,
+            VOL_END_REPAIR,
             P50_ASP_HEIGHT,
             P50_ASP_OFFSETS,
             P50_WORK_DSP_HEIGHT,
             P50_WORK_DSP_OFFSETS,
-            f"source 96DW column {SRC_FERAT_COL} (FERAT Master Mix)",
+            f"source 96DW column {SRC_END_REPAIR_COL} (end-repair master mix)",
         )
 
-    print("PAUSE/TODO: seal, vortex/spin, FERAT thermocycler program.")
+    print("PAUSE/TODO: seal, vortex/spin, end-repair thermocycler program.")
 
     for col in DEST_COLUMNS:
         await transfer_column(
@@ -323,33 +334,33 @@ async def run_library_prep_additions(lh, p50_tips, source_96dw, work_plate):
     for col in DEST_COLUMNS:
         await transfer_column(
             lh,
-            source_96dw[f"A{SRC_LP2L_COL}:H{SRC_LP2L_COL}"],
+            source_96dw[f"A{SRC_LIGATION_MIX_COL}:H{SRC_LIGATION_MIX_COL}"],
             wells_for_column(work_plate, col),
-            VOL_LP2L,
+            VOL_LIGATION_MIX,
             P50_ASP_HEIGHT,
             P50_ASP_OFFSETS,
             P50_WORK_DSP_HEIGHT,
             P50_WORK_DSP_OFFSETS,
-            f"source 96DW column {SRC_LP2L_COL} (LP2L)",
+            f"source 96DW column {SRC_LIGATION_MIX_COL} (ligation master mix)",
         )
 
-    print("PAUSE/TODO: seal/mix/spin, 20C ligation 15 min.")
+    print("PAUSE/TODO: seal/mix/spin, operator-supplied temperature ligation operator-supplied duration.")
 
     for col in DEST_COLUMNS:
         await transfer_column(
             lh,
-            source_96dw[f"A{SRC_LIBAMP_COL}:H{SRC_LIBAMP_COL}"],
+            source_96dw[f"A{SRC_LIBRARY_PCR_COL}:H{SRC_LIBRARY_PCR_COL}"],
             wells_for_column(work_plate, col),
-            VOL_LIBAMP,
+            VOL_LIBRARY_PCR,
             P50_ASP_HEIGHT,
             P50_ASP_OFFSETS,
             P50_WORK_DSP_HEIGHT,
             P50_WORK_DSP_OFFSETS,
-            f"source 96DW column {SRC_LIBAMP_COL} (Amplification Master Mix)",
+            f"source 96DW column {SRC_LIBRARY_PCR_COL} (library PCR master mix)",
         )
 
     await lh.return_tips()
-    print("PAUSE/TODO: seal/mix/spin, LIB-AMP thermocycler program.")
+    print("PAUSE/TODO: seal/mix/spin, LIBRARY AMPLIFICATION thermocycler program.")
 
 
 async def run_cleanup_additions_on_magnet(lh, p1000_tips, trough, mag_plate):
@@ -371,7 +382,7 @@ async def run_cleanup_additions_on_magnet(lh, p1000_tips, trough, mag_plate):
             f"{TROUGH_BEADS} (SPRI cleanup beads)",
         )
 
-    print("PAUSE/TODO: seal/vortex high 10 sec, incubate RT 5 min, spin 10 sec, magnet 3 min/until clear.")
+    print("PAUSE/TODO: follow the operator-approved WGS cleanup handoff through magnetic clearing.")
     print("TODO: remove supernatant on magnet to waste with bead-safe aspiration geometry.")
 
     for col in DEST_COLUMNS:
@@ -387,7 +398,7 @@ async def run_cleanup_additions_on_magnet(lh, p1000_tips, trough, mag_plate):
             f"{TROUGH_ETOH1} (80% EtOH wash 1)",
         )
 
-    print("PAUSE/TODO: incubate on magnet 30 sec.")
+    print("PAUSE/TODO: hold on the magnet for the operator-approved cleanup duration.")
     print("TODO: remove ethanol wash 1 to waste with bead-safe aspiration geometry.")
 
     for col in DEST_COLUMNS:
@@ -403,8 +414,8 @@ async def run_cleanup_additions_on_magnet(lh, p1000_tips, trough, mag_plate):
             f"{TROUGH_ETOH2} (80% EtOH wash 2)",
         )
 
-    print("PAUSE/TODO: incubate on magnet 30 sec.")
-    print("TODO: remove ethanol wash 2, spin, return to magnet, residual ethanol removal, dry 3 min.")
+    print("PAUSE/TODO: hold on the magnet for the operator-approved cleanup duration.")
+    print("TODO: remove ethanol wash 2, spin, return to magnet, residual ethanol removal, dry operator-supplied duration.")
 
     for col in DEST_COLUMNS:
         await transfer_from_trough(
@@ -419,8 +430,8 @@ async def run_cleanup_additions_on_magnet(lh, p1000_tips, trough, mag_plate):
             f"{TROUGH_ELUTION} (Elution Buffer)",
         )
 
-    print("PAUSE/TODO: off magnet resuspend/mix, incubate RT 2 min, spin, magnet 2 min/until clear.")
-    print("TODO: transfer 40 uL eluate to final output plate after output deck position is finalized.")
+    print("PAUSE/TODO: resuspend off-magnet, then follow the operator-approved cleanup handoff through final clearing.")
+    print("TODO: transfer the operator-approved eluate volume after the output deck position is finalized.")
 
     await lh.return_tips()
 
@@ -461,7 +472,7 @@ async def main():
         work_carrier[WORK_POS] = work_plate
         mag_carrier[MAG_POS] = mag_plate
 
-        await run_wga_additions(lh, p50_tips, source_96dw, work_plate)
+        await run_wgs_prep_additions(lh, p50_tips, source_96dw, work_plate)
         await run_library_prep_additions(lh, p50_tips, source_96dw, work_plate)
 
         print("\n=== iSWAP STUBS TO ADD AFTER LH VALIDATION ===")

@@ -1,11 +1,11 @@
 """
 Synthetic response surface for the minimal-effective-reaction search.
 
-This is the plant in plant-and-recover. It stands in for the real closed loop:
-in production, evaluating a candidate means compiling the dna_ultra2_umi config
-to a runnable STAR method, running it, and reading the Tecan QC. Here that is
-replaced by a known synthetic surface so we can score how well the agent
-recovers a KNOWN answer, and how few runs it needs, with no hardware.
+This is the plant in plant-and-recover. It stands in for a real closed loop,
+which would require an independently reviewed operator method, a run, and a
+Tecan QC read. Here it is modeled with a known synthetic surface so we can
+score how well the agent recovers a KNOWN answer, and how few runs it needs,
+with no hardware.
 
 The recipe has three titratable, cost-bearing knobs (each normalized to [0,1]):
 

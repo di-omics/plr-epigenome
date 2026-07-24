@@ -1,3 +1,14 @@
+from pathlib import Path as _MethodPath
+import sys as _method_sys
+
+_METHOD_ROOT = next(
+    parent for parent in _MethodPath(__file__).resolve().parents
+    if parent.name == "hamilton-star"
+)
+if str(_METHOD_ROOT) not in _method_sys.path:
+    _method_sys.path.insert(0, str(_METHOD_ROOT))
+from operator_parameters import required_nonnegative, required_positive
+
 import argparse
 import asyncio
 from typing import Dict, List
@@ -14,7 +25,7 @@ from pylabrobot.resources import (
 import pylabrobot.resources as plr_resources
 
 # -----------------------------------------------------------------------------
-# WGS preparation (PTA) - p300 bead-clean add/remove + rail35 iSWAP focused test
+# WGS preparation (WGS preparation) - p300 bead-clean add/remove + rail35 iSWAP focused test
 #
 # Active deck:
 # - Rail 48 pos2 = p300 filter conductive tips.
@@ -50,8 +61,8 @@ TROUGH_ELUTION = "A4"
 TROUGH_WATER_TEST = "A5"
 TROUGH_WASTE = "A12"
 
-DEFAULT_ETOH_VOL = 200.0
-DEFAULT_REMOVE_VOL = 180.0
+DEFAULT_ETOH_VOL = required_positive("wgs.cleanup.wash_add_ul")
+DEFAULT_REMOVE_VOL = required_positive("wgs.cleanup.wash_remove_ul")
 
 P300_TROUGH_ASP_HEIGHT = [10.0] * 8
 P300_TROUGH_ASP_OFFSETS = [Coordinate(0.0, 1.5, 0.0)] * 8
@@ -320,7 +331,7 @@ async def main():
             await remove_from_bead_clean_to_waste(lh, resources, dest_cols, args.waste_well, args.remove_vol, args.remove_tip_col, args.discard_tips)
         elif args.mode == "add-remove":
             await add_from_reservoir_to_bead_clean(lh, resources, args.source_well, dest_cols, args.add_vol, args.add_tip_col, args.discard_tips)
-            print("NOTE: Protocol incubation after ethanol add is 30 seconds on magnet before removal.")
+            print("NOTE: Use the operator-approved local wash incubation before removal.")
             await remove_from_bead_clean_to_waste(lh, resources, dest_cols, args.waste_well, args.remove_vol, args.remove_tip_col, args.discard_tips)
         elif args.mode == "iswap-add":
             await move_work_plate_pos0_to_bead_clean_pos1(lh, resources)

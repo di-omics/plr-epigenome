@@ -1,3 +1,14 @@
+from pathlib import Path as _MethodPath
+import sys as _method_sys
+
+_METHOD_ROOT = next(
+    parent for parent in _MethodPath(__file__).resolve().parents
+    if parent.name == "hamilton-star"
+)
+if str(_METHOD_ROOT) not in _method_sys.path:
+    _method_sys.path.insert(0, str(_METHOD_ROOT))
+from operator_parameters import required_nonnegative, required_positive
+
 import argparse
 import asyncio
 from dataclasses import dataclass
@@ -53,21 +64,23 @@ ISWAP_POS1_PICKUP_Z_MM = 42.0
 ISWAP_POS0_DROPOFF_Z_MM = 20.0
 
 P10_STEPS: List[Tuple[int, float, str]] = [
-    (1, 3.0, "Lysis Mix"),
-    (2, 6.0, "Reaction Mix"),
-    (3, 3.0, "DNA Prep Master Mix"),
-    (4, 4.0, "FERAT Master Mix"),
-    (5, 5.0, "UDI Adapters - VERIFY MAP"),
-    (6, 5.0, "LP2L"),
+    (1, required_positive("wgs.stage_1_volume_ul"), "operator WGS stage 1"),
+    (2, required_positive("wgs.stage_2_volume_ul"), "operator WGS stage 2"),
+    (3, required_positive("wgs.stage_3_volume_ul"), "operator WGS stage 3"),
+    (4, required_positive("wgs.stage_4_volume_ul"), "operator WGS stage 4"),
+    (5, required_positive("wgs.stage_5_volume_ul"), "operator WGS stage 5"),
+    (6, required_positive("wgs.stage_6_volume_ul"), "operator WGS stage 6"),
 ]
-P50_STEPS: List[Tuple[int, float, str]] = [(7, 20.0, "Amplification Master Mix")]
+P50_STEPS: List[Tuple[int, float, str]] = [
+    (7, required_positive("wgs.stage_7_volume_ul"), "operator WGS stage 7"),
+]
 
 TROUGH_ETOH1 = "A2"
 TROUGH_ETOH2 = "A3"
 TROUGH_WASTE = "A12"
-VOL_ETOH = 200.0
-VOL_ETOH_REMOVE = 180.0
-ETHANOL_INCUBATION_SECONDS = 30
+VOL_ETOH = required_positive("wgs.cleanup.wash_add_ul")
+VOL_ETOH_REMOVE = required_positive("wgs.cleanup.wash_remove_ul")
+ETHANOL_INCUBATION_SECONDS = required_nonnegative("wgs.cleanup.wash_incubation_seconds")
 
 P10_SOURCE_96DW_ASP_HEIGHT = [13.0] * 8
 P10_SOURCE_96DW_ASP_OFFSETS = [Coordinate(0.35, 5.20, 0.0)] * 8
@@ -201,7 +214,7 @@ async def assign_deck(lh: LiquidHandler) -> Dict[str, object]:
     p1000_tips = make_p1000_tiprack("r48_p1000_filter_tips")
     source_96dw = make_96dw_source_plate("rail35_pos2_source_96dw")
     trough = CellTreat_12_troughplate_15000ul_Vb(name="rail35_pos3_12w_reservoir")
-    work_plate = CellTreat_96_wellplate_350ul_Fb(name="resolve_work_96wp")
+    work_plate = CellTreat_96_wellplate_350ul_Fb(name="wgs_work_96wp")
 
     tip_carrier[P10_TIP_POS] = p10_tips
     tip_carrier[P50_TIP_POS] = p50_tips

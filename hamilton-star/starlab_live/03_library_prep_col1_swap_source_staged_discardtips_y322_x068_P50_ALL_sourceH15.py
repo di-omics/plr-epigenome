@@ -1,3 +1,14 @@
+from pathlib import Path as _MethodPath
+import sys as _method_sys
+
+_METHOD_ROOT = next(
+    parent for parent in _MethodPath(__file__).resolve().parents
+    if parent.name == "hamilton-star"
+)
+if str(_METHOD_ROOT) not in _method_sys.path:
+    _method_sys.path.insert(0, str(_METHOD_ROOT))
+from operator_parameters import required_nonnegative, required_positive
+
 import argparse
 import asyncio
 from dataclasses import dataclass
@@ -9,7 +20,7 @@ from pylabrobot.resources.hamilton import STARDeck, TIP_CAR_480_A00
 from pylabrobot.resources import PLT_CAR_L5AC_A00, CellTreat_96_wellplate_350ul_Fb, Coordinate
 import pylabrobot.resources as plr_resources
 
-# WGS preparation Bio Validation 0
+# WGS preparation validation
 # SOURCE-LOW ASPIRATION PATCH:
 # - Empty/under-pickup happened with both p10 and p50 behavior, so source aspiration height is the likely issue.
 # - Source aspiration height lowered from 3.3 to 1.5 for both p10 and p50 constants.
@@ -18,7 +29,7 @@ import pylabrobot.resources as plr_resources
 #
 # P50-ALL FALLBACK PATCH:
 # - All source-to-work library-prep additions use p50 tips from rail48 pos1.
-# - p50 tip columns advance by mode: dnaprep=1, ferat=2, adapter=3, lp2l=4, libamp=5.
+# - p50 tip columns advance by mode: dna_fragmentation=1, end_repair=2, adapter=3, ligation_mix=4, library_pcr=5.
 # - Source aspiration stays Coordinate(-0.65, 3.35, 0.0); work dispense stays Coordinate(-0.68, 3.22, 0.0).
 # - p50 blowout is 6.0 uL for every mode, including 3-5 uL additions.
 # - This is a live-run fallback after p10 under-delivery; test with water/mimic before restarting biology.
@@ -73,11 +84,11 @@ import pylabrobot.resources as plr_resources
 #
 # Source:
 #   rail35 pos1 column 1 only, swapped manually between modes:
-#     dnaprep = DNA Prep Master Mix, 3 uL, p50
-#     ferat   = FERAT Master Mix, 4 uL, p50
-#     adapter = Single Use Library Adapter, 5 uL, p50
-#     lp2l    = LP2L, 5 uL, p50
-#     libamp  = Amplification Master Mix, 20 uL, p50
+#     dna_fragmentation = DNA fragmentation master mix, operator-supplied volume, p50
+#     end_repair   = end-repair master mix, operator-supplied volume, p50
+#     adapter = Library adapters, operator-supplied volume, p50
+#     ligation_mix    = ligation master mix, operator-supplied volume, p50
+#     library_pcr  = library PCR master mix, operator-supplied volume, p50
 #
 # Cleanup/bead/mag steps are not included here.
 
@@ -92,20 +103,20 @@ SOURCE_96WP_POS = 1
 SOURCE_COL = 1
 DEST_COL = 1
 
-VOL_DNAPREP = 3.0
-VOL_FERAT = 4.0
-VOL_ADAPTER = 5.0
-VOL_LP2L = 5.0
-VOL_LIBAMP = 20.0
+VOL_DNA_FRAGMENTATION = required_positive("wgs.stage_3_volume_ul")
+VOL_END_REPAIR = required_positive("wgs.stage_4_volume_ul")
+VOL_ADAPTER = required_positive("wgs.stage_5_volume_ul")
+VOL_LIGATION_MIX = required_positive("wgs.stage_6_volume_ul")
+VOL_LIBRARY_PCR = required_positive("wgs.stage_7_volume_ul")
 
-# Validated Bio Validation 0 p10 geometry.
+# Validated validation p10 geometry.
 P10_WORK_DSP_HEIGHT = [3.3] * 8
 P10_WORK_DSP_OFFSETS = [Coordinate(-0.68, 3.22, 0.0)] * 8
 P10_SOURCE_ASP_HEIGHT = [1.5] * 8
 P10_SOURCE_ASP_OFFSETS = [Coordinate(-0.65, 3.35, 0.0)] * 8
 P10_BLOWOUT_AIR_VOLUME = 5.0
 
-# P50 for LIBAMP uses same x/y and height as the validated column-1 geometry.
+# P50 for library PCR uses same x/y and height as the validated column-1 geometry.
 # Validate with water before real reagent if needed.
 P50_WORK_DSP_HEIGHT = [3.3] * 8
 P50_WORK_DSP_OFFSETS = P10_WORK_DSP_OFFSETS
@@ -128,45 +139,45 @@ class Step:
 
 
 STEPS = {
-    "dnaprep": Step(
-        "dnaprep",
-        "DNA Prep Master Mix",
-        VOL_DNAPREP,
+    "dna_fragmentation": Step(
+        "dna_fragmentation",
+        "DNA fragmentation master mix",
+        VOL_DNA_FRAGMENTATION,
         "p50",
-        "Load source rail35 pos1 column 1 with DNA Prep Master Mix.",
-        "STOP: seal/spin/vortex/spin, then run DNAPREP program (37 C 10 min, 4 C hold).",
+        "Load source rail35 pos1 column 1 with DNA fragmentation master mix.",
+        "STOP: seal/spin/vortex/spin, then run DNA-fragmentation program (operator-supplied temperature operator-supplied duration, operator-supplied temperature hold).",
     ),
-    "ferat": Step(
-        "ferat",
-        "FERAT Master Mix",
-        VOL_FERAT,
+    "end_repair": Step(
+        "end_repair",
+        "end-repair master mix",
+        VOL_END_REPAIR,
         "p50",
-        "After DNAPREP is complete and plate is back on ice, load source rail35 pos1 column 1 with FERAT Master Mix.",
-        "STOP: seal/spin/vortex/spin, then run FERAT program (4 C 30 sec, 30 C 5 min, 65 C 30 min, 4 C hold).",
+        "After DNA fragmentation is complete and plate is back on ice, load source rail35 pos1 column 1 with end-repair master mix.",
+        "STOP: seal/spin/vortex/spin, then run end-repair program (operator-supplied temperature operator-supplied duration, operator-supplied temperature operator-supplied duration, operator-supplied temperature operator-supplied duration, operator-supplied temperature hold).",
     ),
     "adapter": Step(
         "adapter",
-        "Single Use Library Adapter",
+        "Library adapters",
         VOL_ADAPTER,
         "p50",
-        "After FERAT is complete and plate is back on ice, load source rail35 pos1 column 1 with Single Use Library Adapter.",
-        "STOP: swap source column 1 to LP2L and run --mode lp2l next before ligation incubation.",
+        "After end repair is complete and plate is back on ice, load source rail35 pos1 column 1 with Library adapters.",
+        "STOP: swap source column 1 to ligation master mix and run --mode ligation_mix next before ligation incubation.",
     ),
-    "lp2l": Step(
-        "lp2l",
-        "LP2L",
-        VOL_LP2L,
+    "ligation_mix": Step(
+        "ligation_mix",
+        "ligation master mix",
+        VOL_LIGATION_MIX,
         "p50",
-        "Load source rail35 pos1 column 1 with LP2L. LP2L is viscous; make sure it is collected at the bottom and avoid bubbles.",
-        "STOP: after adapter + LP2L are both added, seal/mix/spin and incubate 20 C for 15 min.",
+        "Load source rail35 pos1 column 1 with ligation master mix. ligation master mix is viscous; make sure it is collected at the bottom and avoid bubbles.",
+        "STOP: after adapter + ligation master mix are both added, seal/mix/spin and incubate operator-supplied temperature for operator-supplied duration.",
     ),
-    "libamp": Step(
-        "libamp",
-        "Amplification Master Mix",
-        VOL_LIBAMP,
+    "library_pcr": Step(
+        "library_pcr",
+        "library PCR master mix",
+        VOL_LIBRARY_PCR,
         "p50",
-        "After ligation incubation, load source rail35 pos1 column 1 with Amplification Master Mix.",
-        "STOP: seal/mix/spin, then run LIB-AMP program.",
+        "After ligation incubation, load source rail35 pos1 column 1 with library PCR master mix.",
+        "STOP: seal/mix/spin, then run LIBRARY AMPLIFICATION program.",
     ),
 }
 
@@ -174,11 +185,11 @@ STEPS = {
 # These are deterministic because the script process restarts between biology steps.
 # P50-all fallback: all modes use p50 tip rack columns 1-5.
 DEFAULT_TIP_COL_BY_MODE = {
-    "dnaprep": 1,
-    "ferat": 2,
+    "dna_fragmentation": 1,
+    "end_repair": 2,
     "adapter": 3,
-    "lp2l": 4,
-    "libamp": 5,
+    "ligation_mix": 4,
+    "library_pcr": 5,
 }
 
 
@@ -206,7 +217,7 @@ def wells_for_column(plate, col: int):
 
 
 async def assign_deck(lh: LiquidHandler) -> Dict[str, object]:
-    print("Assigning Bio Validation 0 PRODUCTION library-prep deck: SWAP-SOURCE column-1 DISCARD-TIP version...")
+    print("Assigning validation PRODUCTION library-prep deck: SWAP-SOURCE column-1 DISCARD-TIP version...")
 
     tip_carrier = TIP_CAR_480_A00(name="tip_car_rail48")
     labware_carrier = PLT_CAR_L5AC_A00(name="labware_car_rail35")
@@ -229,11 +240,11 @@ async def assign_deck(lh: LiquidHandler) -> Dict[str, object]:
     print("  rail35 pos0 = destination/work 96WP, destination column 1")
     print("  rail35 pos1 = chilled source 96WP/strip, SOURCE COLUMN 1 ONLY")
     print("\nSwap-source map:")
-    print("  dnaprep: source col 1 = DNA Prep Master Mix, 3 uL, p50")
-    print("  ferat:   source col 1 = FERAT Master Mix, 4 uL, p50")
-    print("  adapter: source col 1 = Single Use Library Adapter, 5 uL, p50")
-    print("  lp2l:    source col 1 = LP2L, 5 uL, p50")
-    print("  libamp:  source col 1 = Amplification Master Mix, 20 uL, p50")
+    print("  dna_fragmentation: source col 1 = DNA fragmentation master mix, operator-supplied volume, p50")
+    print("  end_repair:   source col 1 = end-repair master mix, operator-supplied volume, p50")
+    print("  adapter: source col 1 = Library adapters, operator-supplied volume, p50")
+    print("  ligation_mix:    source col 1 = ligation master mix, operator-supplied volume, p50")
+    print("  library_pcr:  source col 1 = library PCR master mix, operator-supplied volume, p50")
     print("\nP10 geometry:")
     print(f"  P10_SOURCE_ASP_HEIGHT = {P10_SOURCE_ASP_HEIGHT}")
     print(f"  P10_SOURCE_ASP_OFFSETS = {P10_SOURCE_ASP_OFFSETS}")
@@ -315,7 +326,7 @@ async def run_all_dev(lh: LiquidHandler, r: Dict[str, object], discard_tips: boo
     print("P50-all fallback uses p50 tip columns 1-5.")
 
     p50_col = 1
-    for mode in ["dnaprep", "ferat", "adapter", "lp2l", "libamp"]:
+    for mode in ["dna_fragmentation", "end_repair", "adapter", "ligation_mix", "library_pcr"]:
         await transfer_step(lh, r, STEPS[mode], discard_tips, tip_col=p50_col)
         if discard_tips:
             p50_col += 1
@@ -323,8 +334,8 @@ async def run_all_dev(lh: LiquidHandler, r: Dict[str, object], discard_tips: boo
 
 
 async def main():
-    parser = argparse.ArgumentParser(description="Bio Validation 0 P50-all fallback staged column-1 library prep additions, swap-source discard-tip version.")
-    parser.add_argument("--mode", choices=["deck", "dnaprep", "ferat", "adapter", "lp2l", "libamp", "all-dev"], default="deck")
+    parser = argparse.ArgumentParser(description="validation P50-all fallback staged column-1 library prep additions, swap-source discard-tip version.")
+    parser.add_argument("--mode", choices=["deck", "dna_fragmentation", "end_repair", "adapter", "ligation_mix", "library_pcr", "all-dev"], default="deck")
     parser.add_argument("--return-tips", action="store_true", help="Return tips instead of discarding. Default is production-style discard.")
     parser.add_argument(
         "--tip-col",
@@ -332,7 +343,7 @@ async def main():
         default=None,
         help=(
             "Override tip column for this isolated step. Default P50-all map: "
-            "dnaprep p50 col1, ferat p50 col2, adapter p50 col3, lp2l p50 col4, libamp p50 col5."
+            "dna_fragmentation p50 col1, end_repair p50 col2, adapter p50 col3, ligation_mix p50 col4, library_pcr p50 col5."
         ),
     )
     args = parser.parse_args()

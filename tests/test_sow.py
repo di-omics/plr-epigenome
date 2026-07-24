@@ -9,7 +9,7 @@ def test_routes_by_intent():
     cases = {
         "CUT&Tag for H3K4me3, 48 samples": "cut_and_tag",
         "single-cell ATAC via HyDrop droplet gen": "hydrop_atac",
-        "normalize a 96-well plate to equimolar with Qubit": "normalization",
+        "normalize a 96-well plate to equimolar with dsDNA fluorescence": "normalization",
         "TIP-seq epigenomic profiling, 96 samples": "tipseq",
     }
     for text, expected in cases.items():

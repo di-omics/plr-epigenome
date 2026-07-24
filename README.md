@@ -40,26 +40,32 @@ Every runnable method lives under **[`tipseq_plr/protocols/`](tipseq_plr/protoco
 |---|---|---|---|---|
 | **(sci)TIP-seq** | [`protocols/tipseq/`](tipseq_plr/protocols/tipseq) | single-cell epigenomic library prep (Bartlett 2021); plate / bulk / sci variants, with an optional FACSMelody sort to close the sci path | untested | `python -m tipseq_plr.protocols.tipseq.run` |
 | **CUT&Tag** | [`protocols/cut_and_tag/`](tipseq_plr/protocols/cut_and_tag) | chromatin profiling (Kaya-Okur 2019); TIP-seq's front half then direct indexing PCR instead of IVT | untested | `python -m tipseq_plr.protocols.cut_and_tag.run` |
-| **Plate normalization** | [`protocols/normalization/`](tipseq_plr/protocols/normalization) | Qubit HS quant on the Tecan, then normalize a 96-well plate to a uniform concentration | untested | `python -m tipseq_plr.protocols.normalization.run` |
+| **Plate normalization** | [`protocols/normalization/`](tipseq_plr/protocols/normalization) | high-sensitivity dsDNA fluorescence quantification on the Tecan, then normalize a 96-well plate to a uniform concentration | untested | `python -m tipseq_plr.protocols.normalization.run` |
 | **HyDrop scATAC** | [`protocols/hydrop_atac/`](tipseq_plr/protocols/hydrop_atac) | droplet-based scATAC (De Rop 2024); STAR wet chemistry bridged to an Onyx droplet generator by a robot arm | untested | `python -m tipseq_plr.protocols.hydrop_atac.run` |
-| **DNA-seq + UMI (Ultra II)** | [`protocols/dna_ultra2_umi/`](tipseq_plr/protocols/dna_ultra2_umi) | end-to-end NEBNext Ultra II DNA library prep with UMI (NEB E7645/E7103): End Prep, adaptor ligation, SPRI cleanup or two-sided size selection, indexing PCR, cleanup, then a Tecan dsDNA quant that closes the loop into a pass/dilute/fail gate plus a per-well pool plan. TapeStation size QC is a manual operator handoff. | untested | `python -m tipseq_plr.protocols.dna_ultra2_umi.run` |
+| **Generic UMI library workflow** | [`protocols/dna_library_umi/`](tipseq_plr/protocols/dna_library_umi) | configurable orchestration for end preparation, ligation, cleanup or explicit two-sided selection, PCR, QC, and pooling. Live chemistry must come from an operator-reviewed local method file; the bundled demo profile is simulation-only. | untested | `python -m tipseq_plr.protocols.dna_library_umi.run --synthetic-profile` |
 
-**Status** is the validation tier (see [Validation](#validation-and-confidence)). All four read `untested`: they run in simulation but have no paired Rhodamine B evidence yet. That is the honest label until a liquid test clears the bar.
+**Status** is the validation tier (see [Validation](#validation-and-confidence)). All protocols read `untested`: they run in simulation but have no paired Rhodamine B evidence yet. That is the honest label until a liquid test clears the bar.
 
-Each protocol package has the same shape: `config.py` (paper-traceable parameters), `protocol.py` (the orchestrator), `run.py` (a CLI), and any protocol-specific helpers (for example `normalization/plan.py`). A new protocol is a new folder here; it does not touch the shared root. Cross-cutting tooling that is not itself a protocol (the FACSMelody reverse-engineering harness) stays at the root under `reverse_engineering/`.
+Each protocol package has the same shape: `config.py` (paper-traceable parameters
+or a strict operator-method schema), `protocol.py` (the orchestrator), `run.py`
+(a CLI), and any protocol-specific helpers (for example
+`normalization/plan.py`). A new protocol is a new folder here; it does not touch
+the shared root. Cross-cutting tooling that is not itself a protocol (the
+FACSMelody reverse-engineering harness) stays at the root under
+`reverse_engineering/`.
 
 ## Hamilton STAR hardware dev (`hamilton-star/`)
 
 [`hamilton-star/`](hamilton-star) is the on-instrument development for a physical
 Hamilton Microlab STAR, driven by PyLabRobot on a dedicated Raspberry Pi. Where
 `tipseq_plr/` is simulation-first, this is the code that actually moves the deck:
-PTA/WGA and targeted PCR library preparation liquid handling, iSWAP plate moves, and heater-shaker
+WGS and PCR-enrichment liquid handling, iSWAP plate moves, and heater-shaker
 steps, developed and validated dry, with real-reagent runs gated behind typed
 confirmation tokens.
 
 | Path | What it is |
 |---|---|
-| [`hamilton-star/protocols/`](hamilton-star/protocols) | curated Bio Validation 0 runners (PTA/WGA, targeted PCR library preparation) |
+| [`hamilton-star/protocols/`](hamilton-star/protocols) | curated validation runners (WGS preparation and PCR enrichment) |
 | [`hamilton-star/starlab_live/`](hamilton-star/starlab_live) | full live working set mirrored from the Pi, the source of truth for what runs on the instrument |
 | [`hamilton-star/setup/`](hamilton-star/setup) | Pi setup and safe-startup notes; the Pi password and lab-internal IPs are kept private and appear here only as placeholders |
 | [`hamilton-star/run_on_pi.sh`](hamilton-star/run_on_pi.sh) | sync this repo to the Pi and run a chosen script in the instrument venv, without disturbing the Pi's own working directory |
@@ -69,6 +75,12 @@ so any of them runs from any directory once the PyLabRobot venv is active. Start
 with `run_on_pi.sh starlab_live/test_star_no_autoload.py`, which initializes the
 STAR without autoload movement.
 
+WGS and PCR enrichment scripts load assay values from an operator-approved
+local profile through
+`PLR_METHOD_PARAMETERS_FILE`; the public
+[`method-parameters.schema.json`](hamilton-star/method-parameters.schema.json)
+defines shape only. Hardware calibration remains versioned in each script.
+
 ## Validation and confidence
 
 The objective of this repo is a path from **PyLabRobot to a protocol on the Hamilton STAR to liquid-tested validation**, so a method can be trusted, not just simulated. Every protocol carries a validation tier that it only earns with data:
@@ -77,9 +89,9 @@ The objective of this repo is a path from **PyLabRobot to a protocol on the Hami
 |---|---|---|
 | **untested** | PLR-authored, dry-runs in simulation. No physical evidence the STAR dispenses what the code says. | none (the starting point) |
 | **liquid_tested** | Liquid-handling accuracy and precision verified on the STAR. A claim about **volumes**, not biology. | a **Rhodamine B** assay with paired plate-reader data that clears the success criteria |
-| **biovalidated** | The protocol produces the expected biological result. | tracked **privately, not in this public repo** |
+| **biovalidated** | The protocol produces the expected biological result. | recorded in the laboratory's controlled biological-results system |
 
-A protocol is `liquid_tested` **only when** a Rhodamine B dispense series, read on the plate reader with paired data, passes all of: paired replicates present, every reading inside the reader's linear range, standard-curve R² ≥ 0.995, and per-volume accuracy and CV within tolerance (tolerances loosen below 10 uL and below 2 uL). No partial credit: if any check fails, it stays `untested` with the reasons listed. **Biovalidation is deliberately out of this public repo.** Full criteria and the evaluator: [docs/validation.md](docs/validation.md).
+A protocol is `liquid_tested` **only when** a Rhodamine B dispense series, read on the plate reader with paired data, passes all of: paired replicates present, every reading inside the reader's linear range, standard-curve R² ≥ 0.995, and per-volume accuracy and CV within tolerance (tolerances loosen below 10 uL and below 2 uL). No partial credit: if any check fails, it stays `untested` with the reasons listed. Biological-result records use the configured controlled laboratory results system. Full criteria and the evaluator: [docs/validation.md](docs/validation.md).
 
 ```bash
 python -m tipseq_plr.validation.cli status                       # the confidence ladder
@@ -163,7 +175,7 @@ python -m tipseq_plr.reverse_engineering.cli coverage --protocol protocol.json
 
 ## CUT&Tag
 
-Chromatin profiling by CUT&Tag (Kaya-Okur et al. 2019). CUT&Tag is TIP-seq's front half: it shares the exact same conA capture, primary and secondary antibody, pA-Tn5 binding, and tagmentation stages. The only difference is the tail: the pA-Tn5 carries standard Nextera ME-A/B adapters (not the ME-T7 transposon), so the tagmented, purified gDNA goes straight into indexing PCR instead of IVT and cDNA synthesis.
+Chromatin profiling by CUT&Tag (Kaya-Okur et al. 2019). CUT&Tag is TIP-seq's front half: it shares the exact same conA capture, primary and secondary antibody, pA-Tn5 binding, and tagmentation stages. The only difference is the tail: the pA-Tn5 carries standard ME-A/B adapters (not the ME-T7 transposon), so the tagmented, purified gDNA goes straight into indexing PCR instead of IVT and cDNA synthesis.
 
 ```bash
 python -m tipseq_plr.protocols.cut_and_tag.run --samples 96 --simulate -v
@@ -171,11 +183,11 @@ python -m tipseq_plr.protocols.cut_and_tag.run --samples 96 --simulate -v
 
 Because it reuses the shared [`steps/binding.py`](tipseq_plr/steps/binding.py) and [`steps/tagmentation.py`](tipseq_plr/steps/tagmentation.py) stages, the CUT&Tag orchestrator is short: front half, 2.0x SPRI purify, indexing PCR (12 to 15 cycles, 14 default), 1.1x cleanup, Tecan QC. Cells stay on conA beads throughout, so like plate/bulk TIP-seq it runs fully autonomously with no sort. This is also the clearest illustration of the shared-infrastructure design: a second published method drops in as a thin orchestrator over the same stages.
 
-## Plate normalization (Qubit HS)
+## Plate normalization
 
 A standalone, shippable protocol: quantify a 96-well source plate and normalize it to a uniform concentration. Independent of the TIP-seq flow, it reuses the same STAR deck and Tecan backend.
 
-Flow: **12 uL source plate -> high-sensitivity Qubit dsDNA prep (2 uL aliquot into a black assay plate) -> Tecan read (Ex485/Em530) + standard curve -> per-well concentration -> normalize sample + water into a destination plate** at a target concentration and volume.
+Flow: **12 uL source plate -> high-sensitivity dsDNA fluorescence assay (2 uL aliquot into a black assay plate) -> Tecan read (Ex485/Em530) + standard curve -> per-well concentration -> normalize sample + water into a destination plate** at a target concentration and volume.
 
 ```bash
 # normalize 96 wells to 1 ng/uL in 20 uL, from a 12 uL source plate
@@ -193,22 +205,28 @@ cfg = NormConfig(num_samples=96, source_volume_ul=12.0,
 report = asyncio.run(PlateNormalization(cfg).run())   # -> counts + per-well plan
 ```
 
-## DNA-seq + UMI (NEBNext Ultra II), closed loop
+## Generic UMI library workflow, closed loop
 
-An end-to-end library prep that turns fragmented DNA into sequencing-ready,
-UMI-tagged libraries on the STAR, then closes the loop with the plate reader.
+This package is an orchestrator, not a bundled chemistry recipe. It provides the
+STAR/ODTC/reader control flow for **end preparation -> adaptor ligation ->
+cleanup or explicit two-sided selection -> PCR -> cleanup -> dsDNA QC**. Every
+volume, duration, ratio, thermal step, QC gate, pooling target, and adaptor
+preparation must be supplied in an operator-reviewed JSON method for a live run.
+There are no live defaults or input-mass lookup tables.
 
-Flow: **End Prep -> UMI adaptor ligation -> SPRI cleanup or two-sided size
-selection -> indexing PCR -> PCR cleanup -> Tecan dsDNA quant**. The reader read
-is the loop: it gates every well `pass` / `dilute` / `fail` and computes a
-per-well pool plan (measured ng/uL sets each well's sample + water into the
-pool). Adaptor dilution and PCR cycle count derive from input mass (NEB
-E7645/E7103 tables). TapeStation size QC has no automated interface yet, so it is
-a manual operator handoff (`resume_after_tapestation`).
+The public `--synthetic-profile` contains arbitrary control-flow data only. It is
+rejected before device construction when combined with `--no-simulate`.
+Fragment-size QC remains a manual operator handoff
+(`resume_after_fragment_analysis`).
 
 ```bash
-python -m tipseq_plr.protocols.dna_ultra2_umi.run --samples 96 --input-ng 100 --simulate -v
-python -m tipseq_plr.protocols.dna_ultra2_umi.run --size-select --insert-bp 300 --input-ng 500
+# safe, non-actionable control-flow demos
+python -m tipseq_plr.protocols.dna_library_umi.run --synthetic-profile --samples 8
+python -m tipseq_plr.protocols.dna_library_umi.run --synthetic-profile --synthetic-size-selection
+
+# live mode requires a local, operator-reviewed method file
+python -m tipseq_plr.protocols.dna_library_umi.run \
+  --method-config /secure/local/operator-method.json --no-simulate
 ```
 
 ### Why computer vision when there is already QC
@@ -231,7 +249,8 @@ plate.
 
 ```bash
 # inject a bead-loss fault; the CV checkpoint aborts before PCR/QC
-python -m tipseq_plr.protocols.dna_ultra2_umi.run --vision --vision-fault-at bead_pellet_formed
+python -m tipseq_plr.protocols.dna_library_umi.run \
+  --synthetic-profile --vision --vision-fault-at bead_pellet_formed
 ```
 
 The checks are a pluggable seam ([`steps/vision.py`](tipseq_plr/steps/vision.py)):
@@ -248,9 +267,9 @@ DISCOVER the cheapest recipe that still yields a decisionable result. That is th
 It plants a known cheapest-feasible recipe on a synthetic response surface, then
 lets a cost-constrained agent (a kernel-surrogate, Bayesian-optimization-lite
 loop) rediscover it blind under a run budget, and scores how close it got and how
-few runs it took. In production, evaluating a candidate means compiling a
-dna_ultra2_umi config to a runnable STAR method and reading the Tecan QC; here the
-surface stands in for that so recovery can be scored against a known answer.
+few runs it took. A production evaluation would require an independently
+reviewed operator method and a Tecan QC read; here the synthetic surface stands
+in for that so recovery can be scored against a known answer.
 
 ```bash
 python -m tipseq_plr.discovery.run --seed 1 -v
@@ -276,7 +295,7 @@ validation ladder, which confirms it with a liquid test before it is trusted.
 
 Automates HyDrop single-cell ATAC library prep by pairing the STAR (wet chemistry) with a Droplet Genomics / Atrandi **Onyx** (droplet generation), connected by a **PLR-driven robot arm** that carries labware between them. The arm is a reusable inter-instrument bridge, so the same abstraction also handles the FACSMelody plate handoff.
 
-Protocol basis: the HyDrop ATAC methods in [De Rop et al., Nat Biotechnol 42:916-926 (2024)](https://doi.org/10.1038/s41587-023-01881-x). The STAR does nuclei prep, tagmentation, and co-encapsulation assembly; the arm carries the loaded chip to the Onyx; the Onyx generates the emulsion; the arm carries it to the ODTC for linear amplification; the STAR finishes with emulsion break, Dynabead/Ampure cleanup, index PCR, size selection, and Tecan QC.
+Protocol basis: the HyDrop ATAC methods in [De Rop et al., Nat Biotechnol 42:916-926 (2024)](https://doi.org/10.1038/s41587-023-01881-x). The STAR does nuclei prep, tagmentation, and co-encapsulation assembly; the arm carries the loaded chip to the Onyx; the Onyx generates the emulsion; the arm carries it to the ODTC for linear amplification; the STAR finishes with emulsion break, capture bead/SPRI beads cleanup, index PCR, size selection, and Tecan QC.
 
 ```bash
 python -m tipseq_plr.protocols.hydrop_atac.run --samples 8 --simulate -v
@@ -296,7 +315,7 @@ The log shows the handoffs: `arm: pick onyx_chip from star_transfer -> place at 
    - `devices.py::HeaterShakerDevice.setup` -> instantiate `HamiltonHeaterShakerBackend` or `InhecoThermoShakeBackend`.
 4. Run with `--no-simulate` and your device addresses (`--` flags map to `RunConfig`: `odtc_host/port`, `hhs_com`, `tecan_host`).
 
-Nothing about the biochemistry sequencing changes between sim and hardware, only the backend transport.
+The protocol logic is shared between simulation and hardware; only the backend transport changes.
 
 ## Architecture
 
@@ -336,8 +355,8 @@ tipseq_plr/
       config.py      CutAndTagConfig (PCR tail; reuses TIP-seq buffers)
       protocol.py    CutAndTag orchestrator
       run.py         CLI
-    normalization/   Qubit HS quant + 96-well normalization
-      config.py      NormConfig / QubitHS assay parameters
+    normalization/   dsDNA fluorescence quantification + 96-well normalization
+      config.py      NormConfig / DsdnaAssay assay parameters
       plan.py        pure normalization math (per-well sample/water plan)
       protocol.py    PlateNormalization
       run.py         CLI
@@ -345,6 +364,10 @@ tipseq_plr/
       config.py      HyDrop buffers / volumes / thermal programs (paper-traceable)
       protocol.py    HyDropATAC: STAR -> arm -> Onyx -> arm -> STAR
       run.py         CLI
+    dna_library_umi/ generic UMI workflow; strict local method config for live use
+      config.py      operator schema + guarded synthetic simulation profile
+      protocol.py    method-driven orchestration, QC, and pooling
+      run.py         explicit --method-config / --synthetic-profile CLI
 docs/facs-melody-re.md      FACSMelody reverse-engineering playbook
 docs/hydrop-onyx-bridge.md  HyDrop + Onyx + robot-arm playbook
 tests/               dry-mode smoke + logic tests (all protocols + toolkits)

@@ -13,11 +13,11 @@ Stages:
   4 droplet gen      Onyx co-encapsulates into a water-in-oil emulsion
   ---- ARM: carry the emulsion Onyx -> ODTC/STAR ----
   5 linear amp       72C 15', 98C 3', 12x(98/63/72), hold 4C (ODTC)
-  6 emulsion break   recovery agent + GuSCN + DTT on ice; Dynabead capture, wash,
+  6 emulsion break   recovery agent + GuSCN + DTT on ice; capture bead capture, wash,
                      elute (STAR + magnet)
-  7 cleanup          1x Ampure (STAR + magnet)
-  8 index PCR        KAPA HiFi + i5/i7 (ODTC)
-  9 size select      0.4-1.2x double-sided Ampure (STAR + magnet)
+  7 cleanup          1x SPRI beads (STAR + magnet)
+  8 index PCR        high-fidelity PCR mix + i5/i7 (ODTC)
+  9 size select      0.4-1.2x double-sided SPRI beads (STAR + magnet)
  10 QC               Tecan dsDNA quant
 
 The arm handoffs are the whole point: the STAR never touches the Onyx and the
@@ -102,10 +102,10 @@ class _HyDropOps:
     async def bead_cleanup(self, bead_reagent: str, *, add_beads_ul: float,
                            elution_reagent: str, elution_ul: float, washes: int = 2,
                            etoh_ul: float = 100.0):
-        """Generic magnetic-bead cleanup (Dynabeads or Ampure)."""
+        """Generic magnetic-bead cleanup (capture beads or SPRI beads)."""
         cfg = self.cfg
         await self.add(bead_reagent, add_beads_ul)
-        await _sleep(cfg.timings.dynabead_bind_s, self.rc)
+        await _sleep(cfg.timings.capture_bead_bind_s, self.rc)
         await self.dev.magnet.engage(self.lh, self.dm.working_plate, settle_s=120)
         await self.remove_supernatant(add_beads_ul + 60)
         for _ in range(washes):
@@ -222,32 +222,32 @@ class HyDropATAC:
     async def emulsion_break(self):
         from . import config as H
         cfg = self.cfg
-        logger.info("== emulsion break + Dynabead capture ==")
+        logger.info("== emulsion break + capture bead capture ==")
         for reagent, vol in ((H.RECOVERY_AGENT, cfg.volumes.recovery_agent_ul),
                              (H.GUSCN_BUFFER, cfg.volumes.guscn_ul),
                              (H.DTT_1M, cfg.volumes.dtt_ul)):
             await self.ops.add(reagent, vol)
         await _sleep(cfg.timings.emulsion_break_ice_s, self.rc)
         await self.ops.bead_cleanup(
-            H.DYNABEADS, add_beads_ul=cfg.volumes.dynabeads_ul,
-            elution_reagent=H.ELUTION_BUFFER, elution_ul=cfg.volumes.dynabead_elution_ul,
+            H.CAPTURE_BEADS, add_beads_ul=cfg.volumes.capture_beads_ul,
+            elution_reagent=H.ELUTION_BUFFER, elution_ul=cfg.volumes.capture_bead_elution_ul,
             washes=2, etoh_ul=cfg.volumes.etoh_ul)
 
-    async def ampure_cleanup(self):
+    async def spri_cleanup(self):
         from . import config as H
         cfg = self.cfg
-        logger.info("== 1x Ampure cleanup ==")
+        logger.info("== 1x SPRI beads cleanup ==")
         await self.ops.bead_cleanup(
-            H.AMPURE, add_beads_ul=cfg.volumes.dynabead_elution_ul * cfg.volumes.ampure_ratio_1,
-            elution_reagent=H.ELUTION_BUFFER, elution_ul=cfg.volumes.ampure_elution_ul,
+            H.SPRI_BEADS, add_beads_ul=cfg.volumes.capture_bead_elution_ul * cfg.volumes.spri_ratio_1,
+            elution_reagent=H.ELUTION_BUFFER, elution_ul=cfg.volumes.spri_elution_ul,
             washes=2, etoh_ul=cfg.volumes.etoh_ul)
 
     async def index_pcr(self):
         from . import config as H
         cfg = self.cfg
         p = cfg.index_pcr
-        logger.info("== index PCR (KAPA HiFi + i5/i7, %d cycles) ==", p.cycles)
-        await self.ops.add(H.KAPA_HIFI, cfg.volumes.index_pcr_ul - cfg.volumes.ampure_elution_ul
+        logger.info("== index PCR (high-fidelity PCR mix + i5/i7, %d cycles) ==", p.cycles)
+        await self.ops.add(H.HIGH_FIDELITY_PCR_MIX, cfg.volumes.index_pcr_ul - cfg.volumes.spri_elution_ul
                            - cfg.volumes.index_i5_ul - cfg.volumes.index_i7_ul)
         await self.ops.add(H.INDEX_I5, cfg.volumes.index_i5_ul)
         await self.ops.add(H.INDEX_I7, cfg.volumes.index_i7_ul)
@@ -264,7 +264,7 @@ class HyDropATAC:
         logger.info("== double-sided size selection (%.1f-%.1fx) ==",
                     cfg.volumes.sizeselect_low, cfg.volumes.sizeselect_high)
         await self.ops.bead_cleanup(
-            H.AMPURE, add_beads_ul=cfg.volumes.index_pcr_ul * cfg.volumes.sizeselect_high,
+            H.SPRI_BEADS, add_beads_ul=cfg.volumes.index_pcr_ul * cfg.volumes.sizeselect_high,
             elution_reagent=H.ELUTION_BUFFER, elution_ul=cfg.volumes.final_elution_ul,
             washes=2, etoh_ul=cfg.volumes.etoh_ul)
 
@@ -299,7 +299,7 @@ class HyDropATAC:
             emulsion_ul = await self.droplet_generation()
             await self.linear_amplification()
             await self.emulsion_break()
-            await self.ampure_cleanup()
+            await self.spri_cleanup()
             await self.index_pcr()
             await self.size_selection()
             report = await self.qc()

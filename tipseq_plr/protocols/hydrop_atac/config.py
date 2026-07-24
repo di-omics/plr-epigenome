@@ -16,21 +16,21 @@ from dataclasses import dataclass, field
 
 
 # Buffer / reagent names for HyDrop (assigned to reservoirs by the protocol).
-ATAC_LYSIS = "hydrop_atac_lysis"          # BSA/Tris/NaCl/Tween/NP-40/MgCl2/Pitstop/digitonin
+ATAC_LYSIS = "hydrop_atac_lysis"          # nuclei lysis buffer
 ATAC_WASH = "hydrop_atac_nuclei_wash"     # BSA/Tris/Tween/NaCl/MgCl2
 PBS = "pbs"
-ATAC_RXN_MIX = "hydrop_atac_reaction_mix" # DMF/Tris/MgCl2/Tn5/Pitstop/Tween/digitonin
-LINAMP_PCR_MIX = "hydrop_linamp_pcr_mix"  # Phusion HF/OptiPrep/dNTP/DTT/Phusion/DeepVent/ET-SSB
+ATAC_RXN_MIX = "hydrop_atac_reaction_mix" # buffered Tn5 reaction mix
+LINAMP_PCR_MIX = "hydrop_linamp_pcr_mix"  # high-fidelity linear-amplification mix
 HYDROP_BEADS = "hydrop_atac_beads"        # 384x384 barcoded hydrogel beads
 HFE_OIL = "hfe7500_ea008_oil"             # HFE-7500 Novec oil + EA-008 surfactant
 RECOVERY_AGENT = "recovery_agent"         # 20% perfluorooctanol in HFE-7500
 GUSCN_BUFFER = "guscn_buffer"             # 5 M guanidinium thiocyanate / EDTA / Tris
 DTT_1M = "dtt_1m"
-DYNABEADS = "dynabeads_mytwo"             # streptavidin/DNA-binding Dynabeads
+CAPTURE_BEADS = "capture_beads"                   # streptavidin/DNA-binding magnetic beads
 ETHANOL_80 = "ethanol_80"
 ELUTION_BUFFER = "elution_buffer_dtt_tween"  # 10 mM Tris pH8.5 + 10 mM DTT + 0.1% Tween
-AMPURE = "ampure_xp"
-KAPA_HIFI = "kapa_hifi_2x"
+SPRI_BEADS = "spri_beads"
+HIGH_FIDELITY_PCR_MIX = "high_fidelity_pcr_mix"
 INDEX_I5 = "index_i5_primer"
 INDEX_I7 = "index_i7_primer"
 QUANT_DYE = "dsdna_quant_dye"
@@ -49,15 +49,15 @@ class HyDropVolumes:
     recovery_agent_ul: float = 125.0
     guscn_ul: float = 55.0
     dtt_ul: float = 5.0
-    dynabeads_ul: float = 5.0
+    capture_beads_ul: float = 5.0
     etoh_ul: float = 100.0
-    dynabead_elution_ul: float = 50.0
-    ampure_ratio_1: float = 1.0            # 1x Ampure after Dynabead elution
-    ampure_elution_ul: float = 30.0
-    index_pcr_ul: float = 100.0            # 1x KAPA HiFi + i5 + i7
+    capture_bead_elution_ul: float = 50.0
+    spri_ratio_1: float = 1.0            # 1x SPRI beads after capture bead elution
+    spri_elution_ul: float = 30.0
+    index_pcr_ul: float = 100.0            # 1x high-fidelity PCR mix + i5 + i7
     index_i5_ul: float = 2.0
     index_i7_ul: float = 2.0
-    sizeselect_low: float = 0.4            # 0.4-1.2x double-sided Ampure
+    sizeselect_low: float = 0.4            # 0.4-1.2x double-sided SPRI beads
     sizeselect_high: float = 1.2
     final_elution_ul: float = 25.0
 
@@ -67,7 +67,7 @@ class HyDropTimings:
     lysis_s: int = 5 * 60                  # 5 min on ice
     tagmentation_s: int = 60 * 60          # 37C 1 h, no shaking
     emulsion_break_ice_s: int = 5 * 60
-    dynabead_bind_s: int = 10 * 60
+    capture_bead_bind_s: int = 10 * 60
     bead_dry_s: int = 3 * 60
 
 
@@ -99,7 +99,7 @@ class LinAmpProfile:
 
 @dataclass
 class IndexPCRProfile:
-    """Index PCR with KAPA HiFi. Cycle count set by qPCR; default conservative."""
+    """Index PCR with high-fidelity PCR mix. Cycle count set by qPCR; default conservative."""
 
     denature_c: float = 98.0
     denature_s: int = 15

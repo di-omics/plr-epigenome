@@ -6,7 +6,7 @@ Reuses TIP-seq's shared front half, then diverges to direct PCR:
   1 targeting     conA capture -> primary Ab -> secondary Ab -> pA-Tn5   (steps.binding)
   2 tagmentation  activate 37C -> EDTA stop -> SDS/proteinase K          (steps.tagmentation)
   3 purify        2.0x SPRI, elute clean gDNA for PCR (beads discarded)
-  4 index PCR     + i5/i7 + NEBNext 2X; 72C gap-fill then N cycles (ODTC)
+  4 index PCR     + i5/i7 + high-fidelity 2X mix; 72C gap-fill then N cycles (ODTC)
   5 cleanup       1.1x SPRI, elute in 10 mM Tris
   6 QC            Tecan dsDNA quant (shared steps.qc)
 

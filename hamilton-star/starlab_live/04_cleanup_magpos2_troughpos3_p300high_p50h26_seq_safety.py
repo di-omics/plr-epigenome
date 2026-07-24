@@ -1,3 +1,14 @@
+from pathlib import Path as _MethodPath
+import sys as _method_sys
+
+_METHOD_ROOT = next(
+    parent for parent in _MethodPath(__file__).resolve().parents
+    if parent.name == "hamilton-star"
+)
+if str(_METHOD_ROOT) not in _method_sys.path:
+    _method_sys.path.insert(0, str(_METHOD_ROOT))
+from operator_parameters import required_nonnegative, required_positive
+
 import argparse
 import asyncio
 from dataclasses import dataclass
@@ -14,7 +25,7 @@ from pylabrobot.resources import (
 )
 import pylabrobot.resources as plr_resources
 
-# WGS preparation Bio Validation 0
+# WGS preparation validation
 # 04 dry bead-clean / ethanol-wash offset test
 # SAFETY PATCH P300-HIGH:
 # - p300 ethanol add crashed during mag pos2 dispense at height 10.5 / z 21.0.
@@ -40,7 +51,7 @@ import pylabrobot.resources as plr_resources
 #
 #
 # Purpose:
-# - Dry/air-move test the cleanup geometry for the new Bio Validation 0 rail35 layout.
+# - Dry/air-move test the cleanup geometry for the new validation rail35 layout.
 # - Magnetic rack / cleanup plate site is rail35 pos2.
 # - 12-well reservoir/trough source is rail35 pos3.
 # - This is for visual offset tuning before real bead/ethanol liquid tests.
@@ -96,12 +107,12 @@ TROUGH_ETOH2 = "A3"
 TROUGH_ELUTION = "A4"
 TROUGH_WASTE = "A12"
 
-VOL_BEADS = 30.0
-VOL_SUPERNATANT_REMOVE = 70.0
-VOL_ETHANOL_ADD = 200.0
-VOL_ETHANOL_REMOVE = 180.0
-VOL_ELUTION = 42.0
-VOL_RESIDUAL_ETHANOL_REMOVE = 20.0
+VOL_BEADS = required_positive("wgs.cleanup.bead_volume_ul")
+VOL_SUPERNATANT_REMOVE = required_positive("wgs.cleanup.supernatant_remove_ul")
+VOL_ETHANOL_ADD = required_positive("wgs.cleanup.wash_add_ul")
+VOL_ETHANOL_REMOVE = required_positive("wgs.cleanup.wash_remove_ul")
+VOL_ELUTION = required_positive("wgs.cleanup.elution_ul")
+VOL_RESIDUAL_ETHANOL_REMOVE = required_positive("wgs.cleanup.residual_remove_ul")
 
 # Existing tuned p300 reservoir geometry.
 P300_TROUGH_ASP_HEIGHT = [10.0] * 8
@@ -235,7 +246,7 @@ def wells_for_column(plate, col: int):
 
 
 async def assign_deck(lh: LiquidHandler) -> Dict[str, object]:
-    print("Assigning Bio Validation 0 cleanup dry-offset deck: mag pos2 + trough pos3...")
+    print("Assigning validation cleanup dry-offset deck: mag pos2 + trough pos3...")
 
     tip_carrier = TIP_CAR_480_A00(name="tip_car_rail48")
     labware_carrier = PLT_CAR_L5AC_A00(name="labware_car_rail35")
@@ -478,7 +489,7 @@ async def run_all_dry(lh: LiquidHandler, r: Dict[str, object], discard_tips: boo
 
 
 async def main():
-    parser = argparse.ArgumentParser(description="Bio Validation 0 cleanup dry-offset test: mag pos2 + trough pos3.")
+    parser = argparse.ArgumentParser(description="validation cleanup dry-offset test: mag pos2 + trough pos3.")
     parser.add_argument(
         "--mode",
         choices=["deck"] + list(ACTIONS.keys()) + ["ethanol-cycle-dry", "ethanol-cycle-residual-dry", "ethanol1-remove-residual-dry", "all-dry"],

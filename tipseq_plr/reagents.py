@@ -34,7 +34,7 @@ _LAYOUT = {
     C.GUHCL:           ("buffers", 1, "6"),
     C.CONA_BEADS:      ("buffers", 2, "1"),
     C.QUANT_DYE:       ("buffers", 2, "2"),
-    C.QUBIT_HS_WS:     ("buffers", 2, "3"),
+    C.DSDNA_ASSAY_WORKING_SOLUTION:     ("buffers", 2, "3"),
     # enzymes carrier (chilled)
     C.PROTEINASE_K:    ("enzymes", 0, "1"),
     C.TAQ_5X:          ("enzymes", 0, "2"),
@@ -54,14 +54,14 @@ _LAYOUT = {
     C.PCR_MASTERMIX:   ("enzymes", 2, "4"),
     C.INDEX_I5:        ("enzymes", 3, "1"),  # i5 lives in an index plate for sci
     C.INDEX_I7:        ("enzymes", 3, "2"),
-    # NEBNext Ultra II DNA (UMI) kit: enzyme mixes chilled, TE/dilution at RT
-    C.ULTRA2_END_PREP_BUFFER:   ("enzymes", 3, "3"),
-    C.ULTRA2_END_PREP_ENZYME:   ("enzymes", 3, "4"),
-    C.ULTRA2_LIGATION_MM:       ("enzymes", 3, "5"),
-    C.ULTRA2_LIGATION_ENHANCER: ("enzymes", 4, "1"),
+    # DNA library preparation: enzyme mixes chilled, TE/dilution at room temperature
+    C.END_REPAIR_BUFFER:   ("enzymes", 3, "3"),
+    C.END_REPAIR_ENZYME:   ("enzymes", 3, "4"),
+    C.LIGATION_MASTER_MIX:       ("enzymes", 3, "5"),
+    C.LIGATION_ENHANCER: ("enzymes", 4, "1"),
     C.UMI_ADAPTOR:              ("enzymes", 4, "2"),
-    C.ULTRA2_Q5_MM:             ("enzymes", 4, "3"),
-    C.NEBNEXT_UDI_PRIMERS:      ("enzymes", 4, "4"),
+    C.LIBRARY_PCR_MASTER_MIX:             ("enzymes", 4, "3"),
+    C.UDI_PRIMER_MIX:      ("enzymes", 4, "4"),
     C.UMI_DILUTION_BUFFER:      ("buffers", 2, "4"),
     C.TE_0_1X:                  ("buffers", 2, "5"),
 }

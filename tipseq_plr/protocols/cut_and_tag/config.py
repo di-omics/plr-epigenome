@@ -5,13 +5,13 @@ CUT&Tag (Kaya-Okur et al. 2019) shares its entire front half with TIP-seq:
 conA capture, primary + secondary antibody, pA-Tn5 binding, and tagmentation.
 The difference is the tail: instead of T7 in-vitro transcription and cDNA
 synthesis, the tagmented, purified gDNA goes straight into indexing PCR. The
-pA-Tn5 here is loaded with standard Nextera ME-A/B adapters (not the ME-T7
-transposon), which is what makes the amplicons PCR-ready.
+pA-Tn5 here is loaded with standard ME-A/B adapters (not the ME-T7
+transposon), which makes the material ready for PCR enrichment.
 
 Volumes/times for the shared binding + tagmentation stages come from the shared
 RunConfig (identical to TIP-seq). This config adds only the PCR tail. Values are
 traceable to the CUT&Tag methods in Bartlett et al. 2021 (which reproduces
-Kaya-Okur et al. 2019): 21 uL purified DNA + i5 + i7 + NEBNext 2X master mix,
+Kaya-Okur et al. 2019): 21 uL purified DNA + i5 + i7 + high-fidelity 2X master mix,
 14-cycle indexing PCR, then a 1.1x SPRI cleanup.
 """
 
@@ -33,7 +33,7 @@ class CutAndTagConfig:
     # indexing PCR (CUT&Tag: 12-15 cycles; 14 default)
     pcr_cycles: int = 14
     pcr_dna_ul: float = 21.0               # gDNA eluate volume feeding the PCR
-    pcr_mastermix_ul: float = 25.0         # NEBNext High-Fidelity 2X
+    pcr_mastermix_ul: float = 25.0         # high-fidelity 2X PCR mix
     index_i5_ul: float = 2.0
     index_i7_ul: float = 2.0
     final_elution_ul: float = 30.0         # 10 mM Tris after post-PCR cleanup

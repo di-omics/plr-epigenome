@@ -24,8 +24,8 @@ Atrandi Biosciences, so it is the same Onyx.
   3 assemble co-encaps  --------> carry chip -----------> 4 co-encapsulate
     (aqueous + beads + oil)                                  water-in-oil emulsion
   5 linear amp (ODTC)   <-------- carry emulsion <--------   collect ~100 uL
-  6 emulsion break + Dynabeads
-  7 Ampure cleanup
+  6 emulsion break + capture beads
+  7 SPRI beads cleanup
   8 index PCR (ODTC)
   9 double-sided size select
  10 QC (Tecan)
